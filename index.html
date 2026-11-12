@@ -3,16 +3,19 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Агент в классе — практикум по ИИ-агентам для учителей</title>
+<title>Mentora — ИИ для учителей с нуля</title>
+<meta name="description" content="Mentora: простые уроки об искусственном интеллекте и ИИ-агентах для учителей. С самого начала, без сложных слов.">
+<meta name="theme-color" content="#FBFAF7">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='-10 -6 140 112'%3E%3Cpath fill='%237B6FBE' fill-rule='evenodd' d='M0 100V44a30 30 0 0 1 60 0v56zM19 100V46a11 11 0 0 1 22 0v54z'/%3E%3Cpath fill='%2388A68F' fill-rule='evenodd' d='M60 100V44a30 30 0 0 1 60 0v56zM79 100V46a11 11 0 0 1 22 0v54z'/%3E%3Cpath fill='%237B6FBE' d='M60 0c1.6 6.6 4.4 9.4 11 11-6.6 1.6-9.4 4.4-11 11-1.6-6.6-4.4-9.4-11-11 6.6-1.6 9.4-4.4 11-11z'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400..800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400..800&family=Comfortaa:wght@600;700&display=swap" rel="stylesheet">
 <style>
 :root{
-  --bg:#F6F4EF; --surface:#FFFFFF; --ink:#2A2740; --soft:#6B6780; --line:#E9E5DC;
-  --accent:#6C5FC7; --accentD:#5649B0; --accentSoft:#EEEBFA;
-  --sage:#6E9C83; --sageSoft:#E5F0E9; --peach:#E9A586; --peachSoft:#FBEEE6; --sand:#F4EBD3;
-  --ok:#3E8660; --okSoft:#E4F2E9; --bad:#B9604A; --badSoft:#F9E8E1;
-  --shadow:0 1px 2px rgba(42,39,64,.04), 0 8px 24px rgba(42,39,64,.06);
+  --bg:#FBFAF7; --surface:#FFFFFF; --ink:#2B2842; --soft:#66627C; --line:#E8E5EF;
+  --accent:#7B6FBE; --accentD:#5E529F; --accentSoft:#EFEDF8;
+  --sage:#88A68F; --sageD:#55775E; --sageSoft:#E9F1EB; --peach:#A79CD9; --peachSoft:#F3F1FA; --sand:#EEF3EF;
+  --ok:#4C8262; --okSoft:#E6F1E9; --bad:#B4616A; --badSoft:#F8E9EB;
+  --shadow:0 1px 2px rgba(43,40,66,.04), 0 8px 24px rgba(43,40,66,.06);
   --r:20px;
 }
 *{box-sizing:border-box}
@@ -24,22 +27,22 @@ button{font:inherit;cursor:pointer;color:inherit}
 .wrap{max-width:880px;margin:0 auto;padding:0 20px}
 
 /* шапка */
-header.top{position:sticky;top:0;z-index:20;background:rgba(246,244,239,.85);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+header.top{position:sticky;top:0;z-index:20;background:rgba(251,250,247,.9);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
 header.top .wrap{display:flex;align-items:center;gap:14px;height:62px}
-.logo{display:flex;align-items:center;gap:10px;font-weight:800;font-size:17px;background:none;border:0;padding:0}
-.logo .mark{width:30px;height:30px;border-radius:10px;background:linear-gradient(135deg,var(--accent),#9A8FE0);display:grid;place-items:center;color:#fff;font-size:15px}
+.logo{display:flex;align-items:center;gap:10px;background:none;border:0;padding:4px 0;font-family:Comfortaa,Manrope,sans-serif;font-weight:700;font-size:22px;color:var(--accent);letter-spacing:-.01em}
+.logo .mk{height:30px;width:36px;flex:none}
 .spacer{flex:1}
 .mini{display:flex;align-items:center;gap:8px;font-size:14px;color:var(--soft);font-weight:600}
 .mini .track{width:90px;height:6px;border-radius:9px;background:var(--line);overflow:hidden}
 .mini .track i{display:block;height:100%;background:var(--sage);border-radius:9px;transition:width .8s cubic-bezier(.2,.8,.2,1)}
 
 /* кнопки */
-.btn{display:inline-flex;align-items:center;gap:8px;border:0;border-radius:14px;padding:13px 22px;font-weight:700;font-size:16px;background:var(--accent);color:#fff;transition:transform .15s ease, box-shadow .2s ease, background .2s;box-shadow:0 2px 0 rgba(0,0,0,.04)}
-.btn:hover{background:var(--accentD);transform:translateY(-1px);box-shadow:0 6px 18px rgba(108,95,199,.25)}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:48px;border:0;border-radius:14px;padding:13px 22px;font-weight:700;font-size:16px;background:var(--accent);color:#fff;transition:transform .15s ease, box-shadow .2s ease, background .2s;box-shadow:0 2px 0 rgba(0,0,0,.04)}
+.btn:hover{background:var(--accentD);transform:translateY(-1px);box-shadow:0 6px 18px rgba(123,111,190,.28)}
 .btn:active{transform:translateY(0) scale(.98)}
 .btn.soft{background:var(--accentSoft);color:var(--accentD)}
-.btn.soft:hover{background:#E3DEF8;box-shadow:none}
-.btn.plain{background:transparent;color:var(--soft);padding:10px 12px}
+.btn.soft:hover{background:#E4E0F4;box-shadow:none}
+.btn.plain{background:transparent;color:var(--soft);padding:10px 12px;box-shadow:none}
 .btn.plain:hover{color:var(--ink);background:rgba(0,0,0,.03);box-shadow:none}
 .btn[disabled]{opacity:.4;pointer-events:none}
 .btn .arr{transition:transform .2s}
@@ -74,7 +77,7 @@ header.top .wrap{display:flex;align-items:center;gap:14px;height:62px}
 .sec-title{font-size:20px;margin:40px 0 16px}
 .lessons{position:relative;display:flex;flex-direction:column;gap:12px;padding-bottom:20px}
 .lesson{display:flex;gap:16px;align-items:center;text-align:left;width:100%;background:var(--surface);border:1px solid transparent;border-radius:var(--r);padding:16px 18px;box-shadow:var(--shadow);transition:transform .2s ease, border-color .2s, box-shadow .2s}
-.lesson:hover{transform:translateY(-2px);border-color:#DCD6F5;box-shadow:0 10px 30px rgba(42,39,64,.08)}
+.lesson:hover{transform:translateY(-2px);border-color:#D6D0EE;box-shadow:0 10px 30px rgba(42,39,64,.08)}
 .lesson .ln{width:44px;height:44px;border-radius:14px;flex:none;display:grid;place-items:center;font-weight:800;background:var(--c);color:var(--ink);position:relative}
 .lesson.done .ln{background:var(--okSoft);color:var(--ok)}
 .lesson.current .ln::after{content:"";position:absolute;inset:-5px;border-radius:17px;border:2px solid var(--accent);animation:pulse 2s ease-in-out infinite}
@@ -91,7 +94,7 @@ header.top .wrap{display:flex;align-items:center;gap:14px;height:62px}
 @media (max-width:560px){.agentcard dl{grid-template-columns:1fr}.agentcard dt{margin-top:6px}}
 
 /* урок */
-.lessonpage{padding:22px 0 80px}
+.lessonpage{padding-top:22px;padding-bottom:80px}
 .lhead{display:flex;align-items:center;gap:10px;margin-bottom:18px}
 .lhead .tag{font-size:14px;font-weight:700;color:var(--soft)}
 .steps{display:flex;gap:6px;margin:0 0 26px}
@@ -113,7 +116,7 @@ header.top .wrap{display:flex;align-items:center;gap:14px;height:62px}
 .tcard{background:var(--surface);border-radius:var(--r);padding:22px 24px;box-shadow:var(--shadow);display:flex;gap:18px;align-items:flex-start}
 .tcard .ti{width:46px;height:46px;border-radius:14px;flex:none;display:grid;place-items:center;font-size:22px;background:var(--c,var(--accentSoft))}
 .tcard h3{font-size:18px;margin-bottom:6px}
-.tcard p{color:#45415A;margin:0}
+.tcard p{color:#454160;margin:0}
 .panel{background:var(--surface);border-radius:24px;padding:24px;box-shadow:var(--shadow)}
 .task-intro{background:var(--sand);border-radius:16px;padding:14px 18px;margin-bottom:18px;font-weight:600}
 .hint{font-size:15px;color:var(--soft)}
@@ -127,8 +130,8 @@ header.top .wrap{display:flex;align-items:center;gap:14px;height:62px}
 .opt.wrong{border-color:var(--bad);background:var(--badSoft)}
 .opt.locked{pointer-events:none}
 .expl{font-size:15px;line-height:1.55;border-radius:12px;padding:11px 14px;margin-top:6px;animation:viewIn .35s ease}
-.expl.ok{background:var(--okSoft);color:#2B5E43}
-.expl.no{background:var(--badSoft);color:#7D3A28}
+.expl.ok{background:var(--okSoft);color:#2F5A42}
+.expl.no{background:var(--badSoft);color:#7C3640}
 
 /* упорядочить */
 .pool,.seq{display:flex;flex-direction:column;gap:8px}
@@ -162,7 +165,7 @@ header.top .wrap{display:flex;align-items:center;gap:14px;height:62px}
 .step.done .ic{background:var(--sand)}
 .step.warn .ic{background:var(--peachSoft)}
 .step.pick{cursor:pointer}
-.step.pick:hover{border-color:#D3CCF3}
+.step.pick:hover{border-color:#CFC8EC}
 .step.right{border-color:var(--ok);background:var(--okSoft)}
 .step.wrong{border-color:var(--bad);background:var(--badSoft)}
 .typing{display:inline-flex;gap:4px;padding:12px 14px}
@@ -174,7 +177,7 @@ header.top .wrap{display:flex;align-items:center;gap:14px;height:62px}
 .doc{background:var(--bg);border-radius:16px;padding:18px 20px;line-height:2}
 .sent{cursor:pointer;border-radius:6px;padding:2px 3px;transition:background .2s, box-shadow .2s}
 .sent:hover{background:var(--accentSoft)}
-.sent.sel{background:var(--sand);box-shadow:inset 0 -2px 0 #D9BE76}
+.sent.sel{background:var(--accentSoft);box-shadow:inset 0 -2px 0 var(--accent)}
 .sent.right{background:var(--okSoft);box-shadow:inset 0 -2px 0 var(--ok)}
 .sent.wrong{background:var(--badSoft)}
 .sent.missed{box-shadow:inset 0 -2px 0 var(--bad)}
@@ -183,33 +186,33 @@ header.top .wrap{display:flex;align-items:center;gap:14px;height:62px}
 label.f{display:block;font-weight:700;margin:16px 0 6px}
 label.f small{font-weight:500;color:var(--soft)}
 textarea,input[type=text]{width:100%;font:inherit;border:1.5px solid var(--line);border-radius:14px;padding:11px 14px;background:var(--surface);color:var(--ink);resize:vertical;transition:border-color .2s, box-shadow .2s}
-textarea:focus,input:focus{outline:none;border-color:#B9AFEA;box-shadow:0 0 0 4px var(--accentSoft)}
+textarea:focus,input:focus{outline:none;border-color:#B4ABDD;box-shadow:0 0 0 4px var(--accentSoft)}
 .chk{display:flex;gap:12px;align-items:flex-start;margin:8px 0;font-weight:600;cursor:pointer}
 .chk input{width:20px;height:20px;margin-top:3px;accent-color:var(--accent);flex:none}
 .chk span small{display:block;font-weight:500;color:var(--soft)}
 .out{background:var(--bg);border-radius:16px;padding:16px 18px;margin-top:12px;overflow:auto;font-size:16px}
 .out table{border-collapse:collapse;width:100%;font-size:15px;margin:8px 0;background:var(--surface);border-radius:10px;overflow:hidden}
 .out td,.out th{border:1px solid var(--line);padding:7px 9px;text-align:left;vertical-align:top}
-.out th{background:#FAF8F3}
+.out th{background:#F6F5FA}
 .out h4{font-size:16px;margin:14px 0 6px}
 .out ul{padding-left:20px;margin:6px 0}
 .out p{margin:6px 0}
 details.more{margin-top:14px;background:var(--bg);border-radius:14px;padding:4px 16px}
 details.more summary{cursor:pointer;font-weight:700;padding:10px 0;color:var(--accentD)}
 .pill{display:inline-block;padding:3px 10px;border-radius:99px;font-size:13px;font-weight:700;white-space:nowrap}
-.pill.ok{background:var(--okSoft);color:var(--ok)}.pill.no{background:var(--badSoft);color:var(--bad)}.pill.mid{background:var(--sand);color:#86671B}
+.pill.ok{background:var(--okSoft);color:var(--ok)}.pill.no{background:var(--badSoft);color:var(--bad)}.pill.mid{background:var(--accentSoft);color:var(--accentD)}
 .score{display:flex;gap:12px;align-items:flex-start;padding:9px 0;border-bottom:1px solid var(--line)}
 .score:last-child{border:0}
 .block-title{font-size:17px;margin:26px 0 10px}
 
 /* успех */
-.success{display:flex;gap:16px;align-items:center;background:var(--okSoft);border-radius:18px;padding:16px 18px;margin-top:18px}
+.success{display:flex;flex-wrap:wrap;gap:16px;align-items:center;background:var(--okSoft);border-radius:18px;padding:16px 18px;margin-top:18px}
 .success svg{flex:none}
 .success .ck{stroke-dasharray:30;stroke-dashoffset:30;animation:draw .6s .15s ease forwards}
 @keyframes draw{to{stroke-dashoffset:0}}
-.success .st{flex:1;font-weight:700;color:#2B5E43}
+.success .st{flex:1;min-width:180px;font-weight:700;color:#2F5A42}
 .success .st small{display:block;font-weight:500}
-.tryagain{background:var(--badSoft);color:#7D3A28;border-radius:16px;padding:13px 16px;margin-top:14px;font-weight:600}
+.tryagain{background:var(--badSoft);color:#7C3640;border-radius:16px;padding:13px 16px;margin-top:14px;font-weight:600}
 .takeaway{background:var(--surface);border-radius:24px;padding:28px;box-shadow:var(--shadow);text-align:center}
 .takeaway .big{font-size:52px;line-height:1;margin-bottom:12px;display:inline-block;animation:pop .6s cubic-bezier(.2,1.4,.4,1)}
 .takeaway h2{margin-bottom:10px}
@@ -220,22 +223,172 @@ details.more summary{cursor:pointer;font-weight:700;padding:10px 0;color:var(--a
 .spin{display:inline-block;width:15px;height:15px;border:2.5px solid var(--accentSoft);border-top-color:var(--accent);border-radius:50%;animation:sp .8s linear infinite;vertical-align:-2px;margin-right:6px}
 @keyframes sp{to{transform:rotate(360deg)}}
 footer{padding:20px 0 40px;color:var(--soft);font-size:14px}
+footer b{font-family:Comfortaa,Manrope,sans-serif;color:var(--accent)}
+:focus-visible{outline:3px solid var(--accent);outline-offset:2px;border-radius:8px}
+body.big{zoom:1.15}
+.hbtn{display:inline-flex;align-items:center;gap:6px;min-height:40px;border:1.5px solid var(--line);background:var(--surface);border-radius:12px;padding:6px 12px;font-weight:700;font-size:14px;color:var(--accentD);transition:border-color .2s,background .2s}
+.hbtn:hover{border-color:var(--accent);background:var(--accentSoft)}
+.hbtn[aria-pressed=true]{background:var(--accentSoft);border-color:var(--accent)}
+@media (max-width:520px){.logo{font-size:19px}.logo .mk{height:26px;width:31px}.mini .track{display:none}header.top .wrap{gap:8px}.hbtn{padding:6px 10px}}
+.hero{display:grid;grid-template-columns:1fr auto;gap:28px;align-items:center;padding:44px 0 8px}
+.hero .eyebrow{color:var(--sageD);font-weight:700;margin-bottom:8px}
+.hero h1{font-size:clamp(28px,5vw,42px)}
+.hero h1 em{font-style:normal;color:var(--accent)}
+.hero p.sub{color:var(--soft);font-size:18px;max-width:560px;margin:12px 0 0}
+.hero .art{width:150px;height:auto}
+@media (max-width:640px){.hero{grid-template-columns:1fr;padding-top:28px}.hero .art{display:none}}
+.facts{display:flex;flex-wrap:wrap;gap:8px;margin-top:18px}
+.facts span{background:var(--sageSoft);color:var(--sageD);font-weight:700;font-size:14px;border-radius:99px;padding:6px 14px}
+.welcome{margin-top:24px;background:var(--accentSoft);border-radius:24px;padding:24px}
+.welcome h2{font-size:21px;margin-bottom:6px}
+.welcome>p{color:var(--soft);margin-bottom:16px}
+.how{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:0 0 18px;padding:0;list-style:none}
+.how li{background:var(--surface);border-radius:16px;padding:14px;font-size:15px;line-height:1.45}
+.how li b{display:block;font-size:16px;margin:6px 0 2px}
+.how .num{width:30px;height:30px;border-radius:10px;display:grid;place-items:center;background:var(--accent);color:#fff;font-weight:800;font-size:15px}
+@media (max-width:760px){.how{grid-template-columns:1fr 1fr}}
+@media (max-width:420px){.how{grid-template-columns:1fr}}
+.part{margin:38px 0 14px}
+.part .tagp{display:inline-block;font-size:13px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;border-radius:99px;padding:4px 12px;background:var(--c);color:var(--ink)}
+.part h2{font-size:22px;margin:10px 0 4px}
+.part p{color:var(--soft);margin:0}
+.quick{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:34px 0 10px}
+.quick button{display:flex;gap:14px;align-items:center;text-align:left;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:16px 18px;transition:border-color .2s,transform .2s}
+.quick button:hover{border-color:var(--accent);transform:translateY(-2px)}
+.quick .qi{width:44px;height:44px;border-radius:14px;flex:none;display:grid;place-items:center;font-size:21px;background:var(--c)}
+.quick b{display:block}.quick span span{font-size:14px;color:var(--soft)}
+@media (max-width:600px){.quick{grid-template-columns:1fr}}
+.page{padding-top:22px;padding-bottom:60px}
+.page h1{font-size:clamp(26px,4.5vw,36px);margin:6px 0 10px}
+.page .lead{font-size:18px;color:var(--soft);max-width:640px;margin-bottom:22px}
+.faq{display:grid;gap:12px}
+.faq .tcard{align-items:flex-start}
+.gl{display:grid;gap:10px}
+.gl div{background:var(--surface);border-radius:16px;padding:16px 20px;box-shadow:var(--shadow)}
+.gl dt{font-weight:800;font-size:18px;color:var(--accentD)}
+.gl dd{margin:4px 0 0}
+.gl dd small{display:block;color:var(--soft);margin-top:4px;font-size:15px}
+.wordlink{background:none;border:0;padding:0;color:var(--accentD);font-weight:700;text-decoration:underline;text-underline-offset:3px}
 </style>
 </head>
 <body>
 <header class="top"><div class="wrap">
-  <button class="logo" data-go="home"><span class="mark">✦</span>Агент в классе</button>
+  <button class="logo" data-go="home" aria-label="Mentora — на главную"><svg class="mk" viewBox="0 0 120 100" aria-hidden="true"><path fill="#7B6FBE" fill-rule="evenodd" d="M0 100V44a30 30 0 0 1 60 0v56zM19 100V46a11 11 0 0 1 22 0v54z"/><path fill="#88A68F" fill-rule="evenodd" d="M60 100V44a30 30 0 0 1 60 0v56zM79 100V46a11 11 0 0 1 22 0v54z"/><path fill="#7B6FBE" d="M60 0c1.6 6.6 4.4 9.4 11 11-6.6 1.6-9.4 4.4-11 11-1.6-6.6-4.4-9.4-11-11 6.6-1.6 9.4-4.4 11-11z"/></svg>Mentora</button>
   <span class="spacer"></span>
   <span class="mini" id="mini"></span>
+  <button class="hbtn" id="bigBtn" aria-pressed="false" title="Крупный текст">Аа</button>
+  <button class="hbtn" data-go="help">Помощь</button>
 </div></header>
 <main id="app"></main>
-<footer><div class="wrap">Все данные в заданиях придуманы. Реальные сведения об учениках здесь вводить не нужно.</div></footer>
+<footer><div class="wrap"><b>Mentora</b> · простые уроки об ИИ для учителей. Все данные в заданиях придуманы. Реальные сведения об учениках здесь вводить не нужно.</div></footer>
 <canvas id="confetti"></canvas>
 
 <script>
 // =============== КУРС ===============
-const C = ['var(--sageSoft)','var(--accentSoft)','var(--peachSoft)','var(--sand)'];
+const C = ['var(--sageSoft)','var(--accentSoft)'];
 const LESSONS = [
+// ---- Часть 1. ИИ с нуля
+{ id:'b1', part:1, title:'Что такое ИИ простыми словами', short:'Без формул и сложных терминов', min:5,
+  intro:`<p>Искусственный интеллект, или коротко ИИ, — это компьютерная программа. Она не живая, не думает как человек и ничего не чувствует.</p>
+  <p>Отличие от обычных программ в одном: её не настраивали под каждую задачу вручную. Ей показали огромное количество текстов и картинок, и она научилась на этих примерах. Так ребёнок учится говорить: не по учебнику грамматики, а слушая взрослых.</p>
+  <p>В этом уроке вы узнаете три главные вещи об ИИ. Ничего устанавливать и нигде регистрироваться не нужно.</p>`,
+  cards:[
+    {i:'💻', h:'ИИ — это программа', t:'Не робот и не разум из фильмов. Это программа, которая работает на компьютерах в интернете. Вы пишете ей с телефона или компьютера.'},
+    {i:'📚', h:'Она училась на примерах', t:'ИИ «прочитал» миллионы текстов и запомнил, как люди обычно пишут и отвечают. Поэтому он умеет продолжать мысль, объяснять и пересказывать.'},
+    {i:'🧑‍🏫', h:'Она помощник, а не замена', t:'ИИ быстро готовит черновик: план, список вопросов, письмо. Решать, что с этим делать, по-прежнему будете вы.'},
+  ],
+  practice:{type:'quiz', intro:'Три простых вопроса. Нажмите на ответ, который считаете верным. За ошибки здесь не ругают: можно выбирать снова.', qs:[
+    {q:'Что такое искусственный интеллект?', o:['Живой разум внутри компьютера','Компьютерная программа, которая училась на примерах','Робот, который ходит по школе'], a:1, e:'ИИ — это программа. Она научилась на большом количестве текстов и картинок.'},
+    {q:'Как ИИ научился отвечать на вопросы?', o:['Ему показали очень много текстов','Его всему научил один программист','Он сам сходил в школу'], a:0, e:'ИИ учится на примерах: чем больше текстов он «прочитал», тем лучше отвечает.'},
+    {q:'Кто принимает решения, когда учитель работает с ИИ?', o:['ИИ','Учитель'], a:1, e:'ИИ готовит черновик, а решает и отвечает за результат человек.'},
+  ]},
+  takeaway:'ИИ — это программа-помощник, которая училась на примерах. Главный в этой паре — вы.'},
+
+{ id:'b2', part:1, title:'Где вы уже встречаете ИИ', short:'Вы пользуетесь им чаще, чем кажется', min:5,
+  intro:`<p>Многие думают, что ещё ни разу не пользовались ИИ. На самом деле он давно работает в привычных вещах.</p>
+  <p>Телефон подсказывает следующее слово, когда вы печатаете сообщение. Переводчик переводит текст с английского. Голосовой помощник отвечает на вопрос о погоде. Всё это ИИ.</p>
+  <p>Значит, вы уже знакомы. Осталось научиться пользоваться им осознанно.</p>`,
+  cards:[
+    {i:'⌨️', h:'Подсказки при наборе', t:'Когда телефон предлагает следующее слово, он угадывает его по тому, как обычно пишут люди.'},
+    {i:'🌍', h:'Переводчик', t:'Онлайн-переводчик не ищет слова в словаре по одному. Он научился переводить целые фразы на миллионах примеров.'},
+    {i:'🗣️', h:'Голосовой помощник', t:'Алиса и похожие помощники распознают вашу речь и подбирают ответ. Это тоже ИИ.'},
+  ],
+  practice:{type:'sort', intro:'Как вы думаете, где работает ИИ, а где обычная программа без ИИ? Нажмите на подходящую кнопку под каждой строкой.', a:'Здесь есть ИИ', b:'Это не ИИ', items:[
+    {t:'Телефон подсказывает следующее слово в сообщении', k:'a', e:'Да, телефон угадывает слово по примерам из миллионов сообщений.'},
+    {t:'Калькулятор считает 25 × 4', k:'b', e:'Калькулятор считает по строгим правилам. Он ничему не учился на примерах.'},
+    {t:'Онлайн-переводчик переводит абзац с английского', k:'a', e:'Современные переводчики работают на ИИ.'},
+    {t:'Будильник звонит в 7:00', k:'b', e:'Будильник просто выполняет команду в заданное время.'},
+    {t:'Голосовой помощник отвечает на вопрос о погоде', k:'a', e:'Он распознаёт речь и подбирает ответ. Это ИИ.'},
+    {t:'Видеосервис советует, что посмотреть дальше', k:'a', e:'Рекомендации подбирает ИИ по тому, что вы смотрели раньше.'},
+  ]},
+  takeaway:'ИИ давно рядом: в подсказках телефона, переводчике и голосовых помощниках. Вы уже умеете им пользоваться.'},
+
+{ id:'b3', part:1, title:'Чат-бот: ИИ, с которым можно переписываться', short:'Как выглядит разговор с ИИ', min:7,
+  intro:`<p>Самый простой способ попробовать ИИ — чат-бот. Это сайт или приложение, где вы пишете сообщение, как в мессенджере, а программа отвечает.</p>
+  <p>Примеры таких чат-ботов: GigaChat, Алиса. Писать можно обычными словами, как коллеге: «Придумай пять вопросов к рассказу „Каштанка“ для 4 класса».</p>
+  <p>Ваше сообщение называют запросом. Специальных команд знать не нужно.</p>`,
+  cards:[
+    {i:'✍️', h:'Вы пишете запрос', t:'Запрос — это ваша просьба обычными словами. Можно писать длинно, можно с ошибками: чат-бот поймёт.'},
+    {i:'💬', h:'Чат-бот отвечает', t:'Через несколько секунд появляется ответ: текст, список, таблица.'},
+    {i:'🔁', h:'Можно уточнять', t:'Если ответ не подошёл, напишите: «сделай короче», «проще», «добавь примеры». Чат-бот помнит разговор и исправит.'},
+  ],
+  practice:{type:'order', label:'Ваш порядок', intro:'Расставьте шаги первого разговора с чат-ботом по порядку. Нажимайте на шаги снизу: они будут подниматься наверх.',
+    items:['Открыть сайт или приложение чат-бота','Написать просьбу обычными словами','Прочитать ответ','Попросить исправить, если что-то не подошло','Проверить результат и взять в работу'],
+    e:'Именно так: открыть, написать, прочитать, уточнить и обязательно проверить перед тем, как использовать.'},
+  takeaway:'Чат-бот — это переписка с ИИ. Вы пишете просьбу обычными словами, читаете ответ и уточняете, пока не получится.'},
+
+{ id:'b4', part:1, title:'Что ИИ умеет, а что нет', short:'Какие задачи можно ему доверить', min:7,
+  intro:`<p>ИИ хорошо работает со словами: пишет, сокращает, упрощает, придумывает варианты. Для учителя это планы уроков, вопросы к тексту, черновики писем.</p>
+  <p>Но у него есть слабые места. Он не знает ваш класс, не знает, что вчера было в школе, и не несёт ответственности за результат.</p>
+  <p>Простое правило: ИИ готовит черновик, вы проверяете и решаете.</p>`,
+  cards:[
+    {i:'✅', h:'Умеет', t:'Придумать задания и вопросы, объяснить тему проще, составить план, сократить текст, предложить несколько вариантов.'},
+    {i:'⚠️', h:'Умеет, но ошибается', t:'Факты, даты, расчёты. Он может написать неверно и очень уверенно. Такое нужно перепроверять.'},
+    {i:'🚫', h:'Не должен', t:'Ставить оценки, принимать решения о детях, получать личные данные учеников. Это остаётся за человеком.'},
+  ],
+  practice:{type:'sort', intro:'Решите для каждой задачи: можно поручить её ИИ как черновик или учитель должен сделать это сам?', a:'Можно поручить ИИ', b:'Только сам учитель', items:[
+    {t:'Придумать пять вопросов к тексту параграфа', k:'a', e:'Отличная задача для ИИ. Вы просмотрите вопросы и выберете лучшие.'},
+    {t:'Поставить ученику итоговую оценку', k:'b', e:'Оценка — это педагогическое решение. Его принимает только учитель.'},
+    {t:'Объяснить сложный термин простыми словами', k:'a', e:'ИИ хорошо упрощает объяснения. Проверьте, что смысл не потерялся.'},
+    {t:'Решить, кого из учеников перевести в другую группу', k:'b', e:'Решения о детях принимает человек, который их знает.'},
+    {t:'Набросать план классного часа', k:'a', e:'ИИ быстро даст черновик, а вы подстроите его под свой класс.'},
+    {t:'Написать родителям письмо с фамилией и диагнозом ребёнка', k:'b', e:'Личные данные детей нельзя отправлять ИИ. Об этом есть отдельный урок.'},
+  ]},
+  takeaway:'ИИ готовит черновики. Оценки, решения о детях и личные данные остаются за вами.'},
+
+{ id:'b5', part:1, title:'Почему ИИ ошибается', short:'И почему проверка — это нормально', min:7,
+  intro:`<p>ИИ не ищет ответ в справочнике. Он подбирает слова, которые выглядят правдоподобно. Обычно получается верно, но иногда он пишет то, чего нет на самом деле.</p>
+  <p>Например, может назвать неправильную дату, придумать несуществующую книгу или ошибиться в подсчёте минут урока. При этом тон ответа остаётся уверенным.</p>
+  <p>Это не поломка, а особенность. К ней легко привыкнуть: важное нужно проверять, как вы проверяете работу стажёра.</p>`,
+  cards:[
+    {i:'🎲', h:'ИИ подбирает слова', t:'Он продолжает текст так, как это обычно делают люди. Правда это или нет, он сам не знает.'},
+    {i:'😌', h:'Уверенный тон не значит «верно»', t:'ИИ пишет гладко и без сомнений, даже когда ошибается. По тону ошибку не заметить.'},
+    {i:'🔍', h:'Важное проверяем', t:'Даты, имена, цифры, цитаты сверяйте с учебником или надёжным источником.'},
+  ],
+  practice:{type:'quiz', intro:'Проверим, как вы поняли. Выберите верный ответ.', qs:[
+    {q:'ИИ написал дату события очень уверенно. Значит, она точно верная?', o:['Да, раз он так уверен','Нет, уверенный тон ничего не гарантирует'], a:1, e:'ИИ всегда пишет уверенно. Дату нужно сверить с учебником.'},
+    {q:'Почему ИИ иногда выдумывает факты?', o:['Он подбирает правдоподобные слова, а не ищет в справочнике','Он хочет обмануть','У него плохое настроение'], a:0, e:'ИИ ничего не хочет и не чувствует. Он просто подбирает слова, которые обычно стоят рядом.'},
+    {q:'Что в ответе ИИ стоит проверить в первую очередь?', o:['Шрифт и отступы','Даты, цифры, имена и цитаты'], a:1, e:'Ошибки чаще всего прячутся в фактах и числах.'},
+  ]},
+  takeaway:'ИИ может ошибаться и при этом звучать уверенно. Поэтому факты и числа всегда проверяем.'},
+
+{ id:'b6', part:1, title:'Ваш первый запрос', short:'Как попросить, чтобы ИИ понял', min:8,
+  intro:`<p>От того, как вы попросите, зависит ответ. Если написать «сделай задания по математике», ИИ не узнает ни класс, ни тему, ни сколько заданий нужно. Ему придётся угадывать.</p>
+  <p>Представьте, что просите о помощи коллегу из другой школы. Вы бы сказали: для какого класса, по какой теме, сколько и в каком виде. С ИИ так же.</p>
+  <p>Хватит трёх подсказок: кому, что, сколько.</p>`,
+  cards:[
+    {i:'👧', h:'Для кого', t:'Назовите класс или возраст: «для 5 класса». От этого зависит сложность слов и заданий.'},
+    {i:'📌', h:'Что именно', t:'Назовите тему и вид работы: «пять задач на проценты», «вопросы к тексту».'},
+    {i:'📏', h:'Сколько и в каком виде', t:'Укажите количество и форму: «пять вопросов списком», «таблица из двух столбцов».'},
+  ],
+  practice:{type:'quiz', intro:'В каждой паре выберите запрос, на который ИИ ответит лучше.', qs:[
+    {q:'Нужны задачи по математике.', o:['«Сделай задачи по математике»','«Придумай 5 задач на сложение дробей для 5 класса, от простой к сложной, с ответами»'], a:1, e:'Здесь есть класс, тема, количество и вид результата. ИИ не придётся угадывать.'},
+    {q:'Нужно объяснить тему проще.', o:['«Объясни, что такое фотосинтез, для ученика 6 класса: 5 предложений и один пример из жизни»','«Расскажи про фотосинтез»'], a:0, e:'Указаны возраст, объём и просьба о примере.'},
+    {q:'Ответ получился слишком длинным. Что написать?', o:['Закрыть чат и начать заново','«Сократи до 5 предложений и оставь только главное»'], a:1, e:'Чат-бот помнит разговор. Достаточно попросить исправить.'},
+  ]},
+  takeaway:'Хороший запрос отвечает на три вопроса: для кого, что именно, сколько и в каком виде. Дальше вы узнаете про ИИ-агентов.'},
+
+// ---- Часть 2. ИИ-агенты
 { id:'l1', title:'Знакомство: кто такой ИИ-агент', short:'Чем агент отличается от обычного чат-бота', min:10,
   intro:`<p>Представьте воскресный вечер. Завтра пять уроков, нужно подготовить самостоятельную, адаптировать текст для двух учеников и ответить родителям в чате.</p>
   <p>Обычный чат-бот поможет с каждым кусочком, если правильно спросить. А ИИ-агент может взять задачу целиком: сам разобьёт её на шаги, найдёт нужное в материалах и принесёт черновик на проверку.</p>
@@ -370,7 +523,9 @@ const LESSONS = [
   practice:{type:'project'},
   takeaway:'Теперь у вас есть собственный агент под реальную задачу. Попробуйте его на этой неделе и поделитесь с коллегами.'},
 ];
-LESSONS.forEach((l,i)=>{ l.n=i+1; l.c=C[i%C.length]; });
+LESSONS.forEach((l,i)=>{ l.n=i+1; l.part=l.part||2; l.c=C[i%C.length]; });
+const TOTAL=LESSONS.length;
+const PARTS=[{n:1,tag:'Часть 1',title:'ИИ с нуля',desc:'Для тех, кто никогда не пользовался ИИ. Начните отсюда.',c:'var(--sageSoft)'},{n:2,tag:'Часть 2',title:'ИИ-агенты',desc:'Помощники, которые выполняют задачу целиком. Проходите после первой части.',c:'var(--accentSoft)'}];
 
 // =============== СОСТОЯНИЕ ===============
 let done=new Set(), myAgents=[], db=null, userId=null;
@@ -420,47 +575,118 @@ function md(src){
 const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
 function confetti(){
   if(reduced) return; const cv=$('#confetti'), ctx=cv.getContext('2d'); cv.width=innerWidth; cv.height=innerHeight;
-  const cols=['#6C5FC7','#9A8FE0','#6E9C83','#E9A586','#E8CF8A']; const ps=Array.from({length:90},()=>({x:innerWidth/2+(Math.random()-.5)*200,y:innerHeight*.45,vx:(Math.random()-.5)*9,vy:-Math.random()*11-4,s:Math.random()*6+4,r:Math.random()*6,vr:(Math.random()-.5)*.3,c:cols[Math.floor(Math.random()*cols.length)]}));
+  const cols=['#7B6FBE','#A79CD9','#88A68F','#B7CDBC','#D9D4EE']; const ps=Array.from({length:90},()=>({x:innerWidth/2+(Math.random()-.5)*200,y:innerHeight*.45,vx:(Math.random()-.5)*9,vy:-Math.random()*11-4,s:Math.random()*6+4,r:Math.random()*6,vr:(Math.random()-.5)*.3,c:cols[Math.floor(Math.random()*cols.length)]}));
   let t=0; (function f(){ ctx.clearRect(0,0,cv.width,cv.height); ps.forEach(p=>{ p.vy+=.32; p.x+=p.vx; p.y+=p.vy; p.r+=p.vr; ctx.save(); ctx.translate(p.x,p.y); ctx.rotate(p.r); ctx.globalAlpha=Math.max(0,1-t/110); ctx.fillStyle=p.c; ctx.fillRect(-p.s/2,-p.s/3,p.s,p.s*.6); ctx.restore(); }); if(++t<110) requestAnimationFrame(f); else ctx.clearRect(0,0,cv.width,cv.height); })();
 }
 function observeReveal(){ const io=new IntersectionObserver(es=>es.forEach(e=>{ if(e.isIntersecting){ e.target.classList.add('on'); io.unobserve(e.target); } }),{threshold:.1}); $$('.reveal').forEach((el,i)=>{ el.style.transitionDelay=Math.min(i*60,400)+'ms'; io.observe(el); }); }
 const nextLesson=()=>LESSONS.find(l=>!done.has(l.id));
-const CHECK=`<svg width="40" height="40" viewBox="0 0 40 40"><circle cx="20" cy="20" r="19" fill="#3E8660"/><path class="ck" d="M12 20.5l5.5 5.5L28.5 15" fill="none" stroke="#fff" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+const CHECK=`<svg width="40" height="40" viewBox="0 0 40 40"><circle cx="20" cy="20" r="19" fill="#4C8262"/><path class="ck" d="M12 20.5l5.5 5.5L28.5 15" fill="none" stroke="#fff" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+
+// =============== КРУПНЫЙ ТЕКСТ ===============
+function setBig(on){ document.body.classList.toggle('big',!!on); const b=$('#bigBtn'); if(b) b.setAttribute('aria-pressed',on?'true':'false'); LS('aic-big',on?1:0); }
+setBig(LS('aic-big'));
+$('#bigBtn').onclick=()=>setBig(!document.body.classList.contains('big'));
 
 // =============== НАВИГАЦИЯ ===============
 function go(v){ if(v==='home'){ history.pushState(null,'',location.pathname+location.search); render(); } else location.hash=v; window.scrollTo({top:0}); }
 addEventListener('hashchange',()=>{ render(); window.scrollTo({top:0}); });
 addEventListener('popstate',()=>render());
 document.addEventListener('click',e=>{ const g=e.target.closest('[data-go]'); if(g){ e.preventDefault(); go(g.dataset.go); } });
-function renderMini(){ const n=done.size; $('#mini').innerHTML=`<span class="track"><i style="width:${n*10}%"></i></span>${n}/10`; }
-function render(){ renderMini(); const h=location.hash.slice(1); const l=LESSONS.find(x=>x.id===h); l?renderLesson(l):renderHome(); }
+function renderMini(){ const n=LESSONS.filter(l=>done.has(l.id)).length; $('#mini').innerHTML=`<span class="track"><i style="width:${n/TOTAL*100}%"></i></span><span title="Пройдено уроков">${n} из ${TOTAL}</span>`; }
+function render(){ renderMini(); const h=location.hash.slice(1); const l=LESSONS.find(x=>x.id===h); if(l) renderLesson(l); else if(h==='help') renderHelp(); else if(h==='glossary') renderGlossary(); else renderHome(); }
 
 // =============== ГЛАВНАЯ ===============
 function greet(){ const h=new Date().getHours(); return h<6?'Доброй ночи':h<12?'Доброе утро':h<18?'Добрый день':'Добрый вечер'; }
-function renderHome(){
-  const n=done.size, nl=nextLesson(), C2=2*Math.PI*36;
-  $('#app').innerHTML=`<div class="view"><div class="wrap">
-  <section class="hello">
-    <div class="eyebrow">${greet()}!</div>
-    <h1>Научимся работать с ИИ-агентами — спокойно и на своих задачах</h1>
-    <p class="sub">10 коротких уроков. В каждом немного теории и одно практическое задание из учительской жизни. Можно проходить по 15 минут в день.</p>
-  </section>
-  <div class="continue reveal">
-    <div class="ring"><svg width="84" height="84"><circle class="bgc" cx="42" cy="42" r="36" fill="none" stroke-width="8"/><circle class="fg" cx="42" cy="42" r="36" fill="none" stroke-width="8" stroke-dasharray="${C2}" stroke-dashoffset="${C2}" data-off="${C2*(1-n/10)}"/></svg><b>${n*10}%</b></div>
-    <div class="ct">${nl?`<small>${n?'Продолжим с того места, где остановились':'Начнём с первого урока'}</small><h3>Урок ${nl.n}. ${nl.title}</h3><p>${nl.short} · ${nl.min} минут</p>`:`<small>Курс пройден</small><h3>Вы прошли все 10 уроков 🎉</h3><p>Возвращайтесь к любому уроку, когда захотите освежить знания.</p>`}</div>
-    ${nl?`<button class="btn" data-go="${nl.id}">${n?'Продолжить':'Начать'} <span class="arr">→</span></button>`:''}
-  </div>
-  <h2 class="sec-title reveal">Программа курса</h2>
-  <div class="lessons">${LESSONS.map(l=>`
+function lessonBtn(l,nl){ return `
     <button class="lesson reveal ${done.has(l.id)?'done':''} ${nl&&nl.id===l.id?'current':''}" data-go="${l.id}" style="--c:${l.c}">
       <span class="ln">${done.has(l.id)?'✓':l.n}</span>
       <span class="lt"><b>${l.title}</b><span>${l.short}</span></span>
-      <span class="lm">${l.min} мин</span>
-    </button>`).join('')}</div>
+      <span class="lm">${done.has(l.id)?'пройден':l.min+' мин'}</span>
+    </button>`; }
+const ART=`<svg class="art" viewBox="-6 -4 132 108" aria-hidden="true"><path fill="#7B6FBE" fill-rule="evenodd" d="M0 100V44a30 30 0 0 1 60 0v56zM19 100V46a11 11 0 0 1 22 0v54z"/><path fill="#88A68F" fill-rule="evenodd" d="M60 100V44a30 30 0 0 1 60 0v56zM79 100V46a11 11 0 0 1 22 0v54z"/><path fill="#7B6FBE" d="M60 0c1.6 6.6 4.4 9.4 11 11-6.6 1.6-9.4 4.4-11 11-1.6-6.6-4.4-9.4-11-11 6.6-1.6 9.4-4.4 11-11z"/></svg>`;
+function renderHome(){
+  const n=LESSONS.filter(l=>done.has(l.id)).length, nl=nextLesson(), C2=2*Math.PI*36, pct=Math.round(n/TOTAL*100), first=!LS('aic-seen')&&!n;
+  $('#app').innerHTML=`<div class="view"><div class="wrap">
+  <section class="hero">
+    <div>
+      <div class="eyebrow">${greet()}!</div>
+      <h1>Искусственный интеллект для учителя — <em>просто и с самого начала</em></h1>
+      <p class="sub">Никогда не пользовались ИИ? Это нормально. Объясним обычными словами и сразу попробуем на задачах из школьной жизни.</p>
+      <div class="facts"><span>${TOTAL} коротких уроков</span><span>5–15 минут в день</span><span>Без регистрации</span></div>
+    </div>
+    ${ART}
+  </section>
+  ${first?`<section class="welcome" id="welcome">
+    <h2>Впервые здесь? Вот как всё устроено</h2>
+    <p>Ничего устанавливать не нужно. Каждый урок состоит из четырёх коротких шагов.</p>
+    <ol class="how">
+      <li><span class="num">1</span><b>Знакомство</b>Короткая история: зачем это нужно учителю.</li>
+      <li><span class="num">2</span><b>Теория</b>Три-четыре карточки с главным. Читается за пару минут.</li>
+      <li><span class="num">3</span><b>Практика</b>Простое задание. Ошибаться можно сколько угодно.</li>
+      <li><span class="num">4</span><b>Итог</b>Одна фраза, которую стоит запомнить.</li>
+    </ol>
+    <div class="navrow" style="margin-top:0"><button class="btn" id="startFirst">Начать первый урок <span class="arr">→</span></button><button class="btn plain" id="hideWelcome">Понятно, скрыть</button></div>
+  </section>`:`<div class="continue reveal">
+    <div class="ring"><svg width="84" height="84"><circle class="bgc" cx="42" cy="42" r="36" fill="none" stroke-width="8"/><circle class="fg" cx="42" cy="42" r="36" fill="none" stroke-width="8" stroke-dasharray="${C2}" stroke-dashoffset="${C2}" data-off="${C2*(1-n/TOTAL)}"/></svg><b>${pct}%</b></div>
+    <div class="ct">${nl?`<small>${n?'Продолжим с того места, где остановились':'Начнём с первого урока'}</small><h3>Урок ${nl.n}. ${nl.title}</h3><p>${nl.short} · ${nl.min} минут</p>`:`<small>Курс пройден</small><h3>Вы прошли все уроки 🎉</h3><p>Возвращайтесь к любому уроку, когда захотите освежить знания.</p>`}</div>
+    ${nl?`<button class="btn" data-go="${nl.id}">${n?'Продолжить':'Начать'} <span class="arr">→</span></button>`:''}
+  </div>`}
+  ${PARTS.map(p=>`<div class="part reveal" style="--c:${p.c}"><span class="tagp">${p.tag}</span><h2>${p.title}</h2><p>${p.desc}</p></div>
+  <div class="lessons">${LESSONS.filter(l=>l.part===p.n).map(l=>lessonBtn(l,nl)).join('')}</div>`).join('')}
+  <div class="quick">
+    <button data-go="help" class="reveal" style="--c:var(--accentSoft)"><span class="qi">❔</span><span><b>Как пользоваться сайтом</b><span>Ответы на частые вопросы</span></span></button>
+    <button data-go="glossary" class="reveal" style="--c:var(--sageSoft)"><span class="qi">📖</span><span><b>Словарик</b><span>Все новые слова простым языком</span></span></button>
+  </div>
   ${myAgents.length?`<h2 class="sec-title reveal">Мои агенты</h2><div class="myagents">${myAgents.map(agentCard).join('')}</div>`:''}
   </div></div>`;
   observeReveal();
+  const sf=$('#startFirst'); if(sf) sf.onclick=()=>{ LS('aic-seen',1); go(LESSONS[0].id); };
+  const hw=$('#hideWelcome'); if(hw) hw.onclick=()=>{ LS('aic-seen',1); renderHome(); };
   requestAnimationFrame(()=>setTimeout(()=>{ const f=$('.ring .fg'); if(f) f.style.strokeDashoffset=f.dataset.off; },150));
+}
+
+// =============== ПОМОЩЬ И СЛОВАРИК ===============
+const FAQ=[
+  ['🌱','Я ничего не знаю об ИИ. Мне сюда?','Да. Первая часть курса написана для тех, кто ни разу не пользовался ИИ. Сложных слов нет, а каждое новое слово объясняется.'],
+  ['🧭','С чего начать?','С урока 1. На главной странице нажмите большую кнопку «Начать» или «Продолжить»: она всегда ведёт к следующему уроку.'],
+  ['📖','Как устроен урок?','Четыре шага: знакомство, теория, практика, итог. Вверху урока видна полоска с этими шагами. Вперёд ведёт фиолетовая кнопка внизу страницы, назад — кнопка «Назад».'],
+  ['✋','Что, если я отвечу неправильно?','Ничего страшного. Оценок здесь нет. Сайт подскажет, и вы выберете другой вариант. Пробовать можно сколько угодно раз.'],
+  ['💾','Нужно ли регистрироваться? Сохранится ли прогресс?','Регистрация не нужна. Пройденные уроки запоминаются в этом браузере на этом устройстве. Если открыть сайт на другом устройстве, прогресс начнётся заново.'],
+  ['🔠','Мелкий текст. Можно увеличить?','Да. Нажмите кнопку «Аа» в верхней части страницы. Повторное нажатие вернёт обычный размер.'],
+  ['🤖','В некоторых уроках написано про «живой ИИ». Что это?','В последних уроках можно запустить настоящего ИИ-агента. Если на вашей версии сайта ИИ не подключён, задание покажет готовый пример, и урок всё равно можно пройти.'],
+  ['🔒','Это безопасно?','Да. Все данные в заданиях придуманы. Не вводите на сайте настоящие фамилии, телефоны и другие сведения об учениках.'],
+];
+function renderHelp(){
+  $('#app').innerHTML=`<div class="view"><div class="wrap page">
+    <button class="btn plain" data-go="home">← На главную</button>
+    <h1>Как пользоваться сайтом</h1>
+    <p class="lead">Короткие ответы на вопросы, которые возникают чаще всего. Читать всё не обязательно: можно сразу начать с первого урока.</p>
+    <div class="faq">${FAQ.map(f=>`<div class="tcard reveal" style="--c:var(--accentSoft)"><div class="ti">${f[0]}</div><div><h3>${f[1]}</h3><p>${f[2]}</p></div></div>`).join('')}</div>
+    <div class="navrow"><button class="btn" data-go="${(nextLesson()||LESSONS[0]).id}">Перейти к уроку <span class="arr">→</span></button><button class="btn soft" data-go="glossary">Открыть словарик</button></div>
+  </div></div>`; observeReveal();
+}
+const WORDS=[
+  ['Искусственный интеллект (ИИ)','Компьютерная программа, которая научилась на большом количестве примеров и умеет отвечать на вопросы, писать тексты, переводить.','Пример: переводчик в телефоне.'],
+  ['Нейросеть','Так часто называют ИИ в разговоре. Для учителя это одно и то же.',''],
+  ['Чат-бот','Сайт или приложение, где с ИИ можно переписываться, как в мессенджере.','Пример: GigaChat, Алиса.'],
+  ['Запрос (промпт)','Ваше сообщение чат-боту: просьба или вопрос обычными словами.','Пример: «Придумай 5 вопросов к рассказу для 4 класса».'],
+  ['Черновик','Результат, который подготовил ИИ. Его нужно прочитать, проверить и поправить.',''],
+  ['Выдумка ИИ','Ошибка, когда ИИ уверенно пишет то, чего нет на самом деле. Иногда её называют «галлюцинацией».','Пример: неверная дата или несуществующая книга.'],
+  ['ИИ-агент','Помощник на основе ИИ, который получает цель и сам выполняет её по шагам, а не просто отвечает на один вопрос.','Пример: «подготовь самостоятельную по дробям».'],
+  ['Инструкция агенту','Описание задачи для агента: кем он работает, что нужно получить, чего делать нельзя и в каком виде нужен результат.',''],
+  ['Инструмент агента','То, чем агент может пользоваться во время работы: учебник, таблица, банк задач.',''],
+  ['Журнал агента','Список шагов, которые сделал агент. По нему видно, что он делал и где мог ошибиться.',''],
+  ['Персональные данные','Сведения, по которым можно узнать конкретного человека: фамилия, телефон, адрес, сведения о здоровье. Их нельзя отправлять ИИ.',''],
+  ['Заглушка','Слово в квадратных скобках вместо настоящих данных.','Пример: [Имя ученика].'],
+];
+function renderGlossary(){
+  $('#app').innerHTML=`<div class="view"><div class="wrap page">
+    <button class="btn plain" onclick="history.length>1?history.back():go('home')">← Назад</button>
+    <h1>Словарик</h1>
+    <p class="lead">Все новые слова курса простым языком. Заучивать не нужно: возвращайтесь сюда, когда встретите незнакомое слово.</p>
+    <dl class="gl">${WORDS.map(w=>`<div class="reveal"><dt>${w[0]}</dt><dd>${w[1]}${w[2]?`<small>${w[2]}</small>`:''}</dd></div>`).join('')}</dl>
+    <div class="navrow"><button class="btn" data-go="home">К урокам <span class="arr">→</span></button></div>
+  </div></div>`; observeReveal();
 }
 function agentCard(a){ return `<div class="agentcard reveal"><h3>${esc(a.name)}</h3><p class="hint" style="margin:0">${esc(a.subject||'')}</p><dl>
   <dt>Роль</dt><dd>${esc(a.role)}</dd><dt>Цель</dt><dd>${esc(a.goal)}</dd><dt>Инструменты</dt><dd>${esc(a.tools)}</dd><dt>Правила</dt><dd>${esc(a.rules)}</dd><dt>Формат</dt><dd>${esc(a.format)}</dd><dt>Проверка</dt><dd>${esc(a.check)}</dd>${a.first_test?`<dt>Первый тест</dt><dd>${esc(a.first_test)}</dd>`:''}</dl></div>`; }
@@ -471,7 +697,7 @@ let L=null, stage=0, passed=false;
 function renderLesson(l){
   if(!L||L.id!==l.id){ L=l; stage=0; passed=done.has(l.id); }
   $('#app').innerHTML=`<div class="view"><div class="wrap lessonpage">
-    <div class="lhead"><button class="btn plain" data-go="home">← Все уроки</button><span class="spacer"></span><span class="tag">Урок ${l.n} из 10 · ${l.min} мин</span></div>
+    <div class="lhead"><button class="btn plain" data-go="home">← Все уроки</button><span class="spacer"></span><span class="tag">Урок ${l.n} из ${TOTAL} · ${l.min} мин</span></div>
     <div class="steps" id="steps"></div>
     <div id="stage"></div>
   </div></div>`;
@@ -482,9 +708,9 @@ function setStage(i){ stage=i; drawStage(); window.scrollTo({top:0,behavior:redu
 function drawStage(){
   drawSteps(); const l=L, box=$('#stage');
   if(stage===0){ box.innerHTML=`<div class="stage"><h2>${l.title}</h2><div class="story">${l.intro}</div><div class="navrow"><span class="spacer"></span><button class="btn" id="nx">К теории <span class="arr">→</span></button></div></div>`; $('#nx').onclick=()=>setStage(1); }
-  if(stage===1){ box.innerHTML=`<div class="stage"><h2>Коротко о главном</h2><div class="cards">${l.cards.map(c=>`<div class="tcard reveal" style="--c:${l.c}"><div class="ti">${c.i}</div><div><h3>${c.h}</h3><p>${c.t}</p></div></div>`).join('')}</div><div class="navrow"><button class="btn plain" id="bk">← Назад</button><span class="spacer"></span><button class="btn" id="nx">К практике <span class="arr">→</span></button></div></div>`; observeReveal(); $('#bk').onclick=()=>setStage(0); $('#nx').onclick=()=>setStage(2); }
+  if(stage===1){ box.innerHTML=`<div class="stage"><h2>Коротко о главном</h2><p class="hint" style="margin:-6px 0 14px">Встретилось непонятное слово? Загляните в <button class="wordlink" data-go="glossary">словарик</button>.</p><div class="cards">${l.cards.map(c=>`<div class="tcard reveal" style="--c:${l.c}"><div class="ti">${c.i}</div><div><h3>${c.h}</h3><p>${c.t}</p></div></div>`).join('')}</div><div class="navrow"><button class="btn plain" id="bk">← Назад</button><span class="spacer"></span><button class="btn" id="nx">К практике <span class="arr">→</span></button></div></div>`; observeReveal(); $('#bk').onclick=()=>setStage(0); $('#nx').onclick=()=>setStage(2); }
   if(stage===2){ box.innerHTML=`<div class="stage"><h2>Практика</h2><div class="panel" id="prac"></div><div id="succ"></div><div class="navrow"><button class="btn plain" id="bk">← К теории</button></div></div>`; $('#bk').onclick=()=>setStage(1); PRACTICE[l.practice.type]($('#prac'),l.practice,onPass); if(passed) showSuccess(true); }
-  if(stage===3){ const nl=LESSONS[l.n]; const all=done.size===10; box.innerHTML=`<div class="stage"><div class="takeaway"><div class="big">${all?'🎓':'🌱'}</div><h2>${all?'Курс пройден!':'Урок пройден'}</h2><p class="tk">${l.takeaway}</p>${all?'<p class="hint">Вы прошли все 10 уроков. Ваш агент сохранён на главной странице.</p>':''}<div class="navrow" style="justify-content:center">${nl?`<button class="btn" data-go="${nl.id}">Урок ${nl.n}: ${nl.title} <span class="arr">→</span></button>`:''}<button class="btn soft" data-go="home">На главную</button></div></div></div>`; if(all) confetti(); }
+  if(stage===3){ const nl=LESSONS[l.n]; const all=done.size>=TOTAL; box.innerHTML=`<div class="stage"><div class="takeaway"><div class="big">${all?'🎓':'🌱'}</div><h2>${all?'Курс пройден!':'Урок пройден'}</h2><p class="tk">${l.takeaway}</p>${all?'<p class="hint">Вы прошли все уроки. Ваш агент сохранён на главной странице.</p>':''}<div class="navrow" style="justify-content:center">${nl?`<button class="btn" data-go="${nl.id}">Урок ${nl.n}: ${nl.title} <span class="arr">→</span></button>`:''}<button class="btn soft" data-go="home">На главную</button></div></div></div>`; if(all) confetti(); }
 }
 function onPass(){ if(!passed){ passed=true; markDone(L.id); confetti(); } showSuccess(false); drawSteps(); }
 function showSuccess(quiet){ const s=$('#succ'); if(!s) return; s.innerHTML=`<div class="success ${quiet?'':'pop'}">${CHECK}<div class="st">Отлично, задание выполнено!<small>Осталось прочитать короткий итог урока.</small></div><button class="btn" id="toEnd">Итог <span class="arr">→</span></button></div>`; $('#toEnd').onclick=()=>setStage(3); }
@@ -503,7 +729,7 @@ quiz(el,p,pass){
 order(el,p,pass){
   const correct=p.items; let pool=shuffle(correct); while(pool.join()===correct.join()) pool=shuffle(correct); let seq=[];
   const draw=()=>{ el.innerHTML=`<div class="task-intro">${p.intro}</div>
-    <div class="colhead">Порядок агента</div><div class="seq">${seq.length?seq.map((t,i)=>`<button class="chip" data-back="${i}"><span class="cn">${i+1}</span>${esc(t)}</button>`).join(''):'<p class="hint">Нажмите на первый шаг ниже.</p>'}</div>
+    <div class="colhead">${p.label||'Порядок агента'}</div><div class="seq">${seq.length?seq.map((t,i)=>`<button class="chip" data-back="${i}"><span class="cn">${i+1}</span>${esc(t)}</button>`).join(''):'<p class="hint">Нажмите на первый шаг ниже.</p>'}</div>
     <div class="colhead">Шаги</div><div class="pool">${pool.map((t,i)=>`<button class="chip" data-pick="${i}"><span class="cn">·</span>${esc(t)}</button>`).join('')||'<p class="hint">Все шаги расставлены.</p>'}</div>
     <div class="navrow"><button class="btn" id="chkO" ${seq.length<correct.length?'disabled':''}>Проверить</button><button class="btn plain" id="rstO">Сбросить</button></div><div id="resO"></div>`;
     $$('[data-pick]',el).forEach(b=>b.onclick=()=>{ seq.push(pool.splice(+b.dataset.pick,1)[0]); draw(); });
