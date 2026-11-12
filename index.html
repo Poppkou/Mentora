@@ -1,0 +1,709 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Агент в классе — практикум по ИИ-агентам для учителей</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400..800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#F6F4EF; --surface:#FFFFFF; --ink:#2A2740; --soft:#6B6780; --line:#E9E5DC;
+  --accent:#6C5FC7; --accentD:#5649B0; --accentSoft:#EEEBFA;
+  --sage:#6E9C83; --sageSoft:#E5F0E9; --peach:#E9A586; --peachSoft:#FBEEE6; --sand:#F4EBD3;
+  --ok:#3E8660; --okSoft:#E4F2E9; --bad:#B9604A; --badSoft:#F9E8E1;
+  --shadow:0 1px 2px rgba(42,39,64,.04), 0 8px 24px rgba(42,39,64,.06);
+  --r:20px;
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{font-family:Manrope,system-ui,sans-serif;color:var(--ink);background:var(--bg);font-size:17px;line-height:1.6;-webkit-font-smoothing:antialiased}
+h1,h2,h3{line-height:1.2;margin:0;font-weight:800;letter-spacing:-.01em}
+p{margin:0 0 12px}
+button{font:inherit;cursor:pointer;color:inherit}
+.wrap{max-width:880px;margin:0 auto;padding:0 20px}
+
+/* шапка */
+header.top{position:sticky;top:0;z-index:20;background:rgba(246,244,239,.85);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+header.top .wrap{display:flex;align-items:center;gap:14px;height:62px}
+.logo{display:flex;align-items:center;gap:10px;font-weight:800;font-size:17px;background:none;border:0;padding:0}
+.logo .mark{width:30px;height:30px;border-radius:10px;background:linear-gradient(135deg,var(--accent),#9A8FE0);display:grid;place-items:center;color:#fff;font-size:15px}
+.spacer{flex:1}
+.mini{display:flex;align-items:center;gap:8px;font-size:14px;color:var(--soft);font-weight:600}
+.mini .track{width:90px;height:6px;border-radius:9px;background:var(--line);overflow:hidden}
+.mini .track i{display:block;height:100%;background:var(--sage);border-radius:9px;transition:width .8s cubic-bezier(.2,.8,.2,1)}
+
+/* кнопки */
+.btn{display:inline-flex;align-items:center;gap:8px;border:0;border-radius:14px;padding:13px 22px;font-weight:700;font-size:16px;background:var(--accent);color:#fff;transition:transform .15s ease, box-shadow .2s ease, background .2s;box-shadow:0 2px 0 rgba(0,0,0,.04)}
+.btn:hover{background:var(--accentD);transform:translateY(-1px);box-shadow:0 6px 18px rgba(108,95,199,.25)}
+.btn:active{transform:translateY(0) scale(.98)}
+.btn.soft{background:var(--accentSoft);color:var(--accentD)}
+.btn.soft:hover{background:#E3DEF8;box-shadow:none}
+.btn.plain{background:transparent;color:var(--soft);padding:10px 12px}
+.btn.plain:hover{color:var(--ink);background:rgba(0,0,0,.03);box-shadow:none}
+.btn[disabled]{opacity:.4;pointer-events:none}
+.btn .arr{transition:transform .2s}
+.btn:hover .arr{transform:translateX(3px)}
+
+/* анимации */
+.view{animation:viewIn .5s cubic-bezier(.2,.8,.2,1)}
+@keyframes viewIn{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+.reveal{opacity:0;transform:translateY(16px);transition:opacity .6s ease, transform .6s cubic-bezier(.2,.8,.2,1)}
+.reveal.on{opacity:1;transform:none}
+.pop{animation:pop .45s cubic-bezier(.2,1.4,.4,1)}
+@keyframes pop{from{opacity:0;transform:scale(.94)}to{opacity:1;transform:none}}
+.shake{animation:shake .4s}
+@keyframes shake{0%,100%{transform:none}25%{transform:translateX(-5px)}75%{transform:translateX(5px)}}
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}.reveal{opacity:1;transform:none}}
+
+/* главная */
+.hello{padding:48px 0 12px}
+.hello .eyebrow{color:var(--soft);font-weight:600;margin-bottom:6px}
+.hello h1{font-size:clamp(28px,5vw,42px);max-width:640px}
+.hello p.sub{color:var(--soft);font-size:18px;max-width:600px;margin-top:12px}
+.continue{margin:28px 0 8px;background:var(--surface);border-radius:24px;padding:24px;box-shadow:var(--shadow);display:flex;gap:22px;align-items:center;flex-wrap:wrap}
+.ring{width:84px;height:84px;flex:none;position:relative}
+.ring svg{transform:rotate(-90deg)}
+.ring .bgc{stroke:var(--line)}
+.ring .fg{stroke:var(--sage);stroke-linecap:round;transition:stroke-dashoffset 1.2s cubic-bezier(.2,.8,.2,1)}
+.ring b{position:absolute;inset:0;display:grid;place-items:center;font-size:18px}
+.continue .ct{flex:1;min-width:220px}
+.continue .ct small{color:var(--soft);font-weight:600}
+.continue .ct h3{font-size:21px;margin:2px 0 4px}
+.continue .ct p{color:var(--soft);margin:0}
+.sec-title{font-size:20px;margin:40px 0 16px}
+.lessons{position:relative;display:flex;flex-direction:column;gap:12px;padding-bottom:20px}
+.lesson{display:flex;gap:16px;align-items:center;text-align:left;width:100%;background:var(--surface);border:1px solid transparent;border-radius:var(--r);padding:16px 18px;box-shadow:var(--shadow);transition:transform .2s ease, border-color .2s, box-shadow .2s}
+.lesson:hover{transform:translateY(-2px);border-color:#DCD6F5;box-shadow:0 10px 30px rgba(42,39,64,.08)}
+.lesson .ln{width:44px;height:44px;border-radius:14px;flex:none;display:grid;place-items:center;font-weight:800;background:var(--c);color:var(--ink);position:relative}
+.lesson.done .ln{background:var(--okSoft);color:var(--ok)}
+.lesson.current .ln::after{content:"";position:absolute;inset:-5px;border-radius:17px;border:2px solid var(--accent);animation:pulse 2s ease-in-out infinite}
+@keyframes pulse{0%,100%{opacity:.25;transform:scale(.96)}50%{opacity:1;transform:scale(1)}}
+.lesson .lt{flex:1;min-width:0}
+.lesson .lt b{display:block;font-size:17px;line-height:1.3}
+.lesson .lt span{font-size:14px;color:var(--soft)}
+.lesson .lm{font-size:13px;color:var(--soft);white-space:nowrap}
+.myagents{display:grid;gap:12px}
+.agentcard{background:var(--surface);border-radius:var(--r);padding:20px;box-shadow:var(--shadow);border-left:4px solid var(--sage)}
+.agentcard h3{font-size:18px;margin-bottom:6px}
+.agentcard dl{margin:8px 0 0;display:grid;grid-template-columns:120px 1fr;gap:6px 12px;font-size:15px}
+.agentcard dt{color:var(--soft);font-weight:600}.agentcard dd{margin:0}
+@media (max-width:560px){.agentcard dl{grid-template-columns:1fr}.agentcard dt{margin-top:6px}}
+
+/* урок */
+.lessonpage{padding:22px 0 80px}
+.lhead{display:flex;align-items:center;gap:10px;margin-bottom:18px}
+.lhead .tag{font-size:14px;font-weight:700;color:var(--soft)}
+.steps{display:flex;gap:6px;margin:0 0 26px}
+.steps .s{flex:1;display:flex;flex-direction:column;gap:7px;font-size:13px;font-weight:700;color:var(--soft);background:none;border:0;padding:0;text-align:left}
+.steps .s i{display:block;height:5px;border-radius:9px;background:var(--line);overflow:hidden;position:relative}
+.steps .s i::after{content:"";position:absolute;inset:0;background:var(--accent);transform:scaleX(0);transform-origin:left;transition:transform .5s cubic-bezier(.2,.8,.2,1)}
+.steps .s.past i::after,.steps .s.cur i::after{transform:scaleX(1)}
+.steps .s.past i::after{background:var(--sage)}
+.steps .s.cur{color:var(--ink)}
+.steps .s[disabled]{cursor:default}
+.stage{animation:viewIn .45s cubic-bezier(.2,.8,.2,1)}
+.lessonpage h2{font-size:clamp(25px,4vw,34px);margin-bottom:14px}
+.story{font-size:19px;line-height:1.7;max-width:700px}
+.story p{margin:0 0 16px}
+.quote{background:var(--surface);border-radius:var(--r);padding:20px 22px;box-shadow:var(--shadow);border-left:4px solid var(--peach);font-size:17px}
+.navrow{display:flex;gap:10px;align-items:center;margin-top:28px;flex-wrap:wrap}
+.navrow .spacer{flex:1}
+.cards{display:grid;gap:14px}
+.tcard{background:var(--surface);border-radius:var(--r);padding:22px 24px;box-shadow:var(--shadow);display:flex;gap:18px;align-items:flex-start}
+.tcard .ti{width:46px;height:46px;border-radius:14px;flex:none;display:grid;place-items:center;font-size:22px;background:var(--c,var(--accentSoft))}
+.tcard h3{font-size:18px;margin-bottom:6px}
+.tcard p{color:#45415A;margin:0}
+.panel{background:var(--surface);border-radius:24px;padding:24px;box-shadow:var(--shadow)}
+.task-intro{background:var(--sand);border-radius:16px;padding:14px 18px;margin-bottom:18px;font-weight:600}
+.hint{font-size:15px;color:var(--soft)}
+
+/* квиз */
+.q{margin-bottom:26px}
+.q .qt{font-weight:700;margin-bottom:10px;font-size:17px}
+.opt{display:block;width:100%;text-align:left;background:var(--bg);border:2px solid transparent;border-radius:14px;padding:13px 16px;margin-bottom:8px;transition:background .2s,border-color .2s,transform .15s;line-height:1.45}
+.opt:hover{background:var(--accentSoft)}
+.opt.right{border-color:var(--ok);background:var(--okSoft)}
+.opt.wrong{border-color:var(--bad);background:var(--badSoft)}
+.opt.locked{pointer-events:none}
+.expl{font-size:15px;line-height:1.55;border-radius:12px;padding:11px 14px;margin-top:6px;animation:viewIn .35s ease}
+.expl.ok{background:var(--okSoft);color:#2B5E43}
+.expl.no{background:var(--badSoft);color:#7D3A28}
+
+/* упорядочить */
+.pool,.seq{display:flex;flex-direction:column;gap:8px}
+.chip{display:flex;gap:12px;align-items:center;text-align:left;width:100%;background:var(--bg);border:2px solid transparent;border-radius:14px;padding:12px 14px;transition:all .2s}
+.chip:hover{background:var(--accentSoft)}
+.chip .cn{width:28px;height:28px;border-radius:9px;flex:none;display:grid;place-items:center;font-weight:800;font-size:14px;background:var(--surface);border:1px solid var(--line)}
+.seq .chip{background:var(--accentSoft)}
+.seq .chip .cn{background:var(--accent);color:#fff;border:0}
+.seq .chip.right{background:var(--okSoft)}.seq .chip.right .cn{background:var(--ok)}
+.seq .chip.wrong{background:var(--badSoft)}.seq .chip.wrong .cn{background:var(--bad)}
+.colhead{font-weight:700;font-size:14px;color:var(--soft);margin:16px 0 8px}
+
+/* сортировка / сопоставление */
+.sortitem{background:var(--bg);border-radius:16px;padding:14px 16px;margin-bottom:10px;transition:background .3s}
+.sortitem .st{font-weight:600;margin-bottom:10px}
+.sortitem .bs{display:flex;gap:8px;flex-wrap:wrap}
+.sortitem .bs button{border:2px solid var(--line);background:var(--surface);border-radius:12px;padding:8px 14px;font-weight:700;font-size:15px;transition:all .2s}
+.sortitem .bs button:hover{border-color:var(--accent);color:var(--accentD)}
+.sortitem.okk{background:var(--okSoft)}.sortitem.okk .bs button.chosen{border-color:var(--ok);color:var(--ok)}
+.sortitem.nok .bs button.chosen{border-color:var(--bad);color:var(--bad)}
+
+/* журнал */
+.log{display:flex;flex-direction:column;gap:8px}
+.step{display:flex;gap:12px;align-items:flex-start;background:var(--bg);border-radius:14px;padding:12px 14px;border:2px solid transparent;text-align:left;width:100%;animation:stepIn .45s cubic-bezier(.2,.8,.2,1);transition:border-color .2s, background .2s}
+@keyframes stepIn{from{opacity:0;transform:translateX(-10px)}to{opacity:1;transform:none}}
+.step .ic{width:30px;height:30px;border-radius:10px;flex:none;display:grid;place-items:center;font-size:15px}
+.step .sa{font-weight:700;line-height:1.35}
+.step .sw{font-size:14px;color:var(--soft);line-height:1.45}
+.step.think .ic{background:var(--accentSoft)}
+.step.tool .ic{background:var(--sageSoft)}
+.step.done .ic{background:var(--sand)}
+.step.warn .ic{background:var(--peachSoft)}
+.step.pick{cursor:pointer}
+.step.pick:hover{border-color:#D3CCF3}
+.step.right{border-color:var(--ok);background:var(--okSoft)}
+.step.wrong{border-color:var(--bad);background:var(--badSoft)}
+.typing{display:inline-flex;gap:4px;padding:12px 14px}
+.typing i{width:7px;height:7px;border-radius:50%;background:var(--soft);animation:blink 1.2s infinite}
+.typing i:nth-child(2){animation-delay:.2s}.typing i:nth-child(3){animation-delay:.4s}
+@keyframes blink{0%,80%,100%{opacity:.25}40%{opacity:1}}
+
+/* найди ошибку */
+.doc{background:var(--bg);border-radius:16px;padding:18px 20px;line-height:2}
+.sent{cursor:pointer;border-radius:6px;padding:2px 3px;transition:background .2s, box-shadow .2s}
+.sent:hover{background:var(--accentSoft)}
+.sent.sel{background:var(--sand);box-shadow:inset 0 -2px 0 #D9BE76}
+.sent.right{background:var(--okSoft);box-shadow:inset 0 -2px 0 var(--ok)}
+.sent.wrong{background:var(--badSoft)}
+.sent.missed{box-shadow:inset 0 -2px 0 var(--bad)}
+
+/* формы */
+label.f{display:block;font-weight:700;margin:16px 0 6px}
+label.f small{font-weight:500;color:var(--soft)}
+textarea,input[type=text]{width:100%;font:inherit;border:1.5px solid var(--line);border-radius:14px;padding:11px 14px;background:var(--surface);color:var(--ink);resize:vertical;transition:border-color .2s, box-shadow .2s}
+textarea:focus,input:focus{outline:none;border-color:#B9AFEA;box-shadow:0 0 0 4px var(--accentSoft)}
+.chk{display:flex;gap:12px;align-items:flex-start;margin:8px 0;font-weight:600;cursor:pointer}
+.chk input{width:20px;height:20px;margin-top:3px;accent-color:var(--accent);flex:none}
+.chk span small{display:block;font-weight:500;color:var(--soft)}
+.out{background:var(--bg);border-radius:16px;padding:16px 18px;margin-top:12px;overflow:auto;font-size:16px}
+.out table{border-collapse:collapse;width:100%;font-size:15px;margin:8px 0;background:var(--surface);border-radius:10px;overflow:hidden}
+.out td,.out th{border:1px solid var(--line);padding:7px 9px;text-align:left;vertical-align:top}
+.out th{background:#FAF8F3}
+.out h4{font-size:16px;margin:14px 0 6px}
+.out ul{padding-left:20px;margin:6px 0}
+.out p{margin:6px 0}
+details.more{margin-top:14px;background:var(--bg);border-radius:14px;padding:4px 16px}
+details.more summary{cursor:pointer;font-weight:700;padding:10px 0;color:var(--accentD)}
+.pill{display:inline-block;padding:3px 10px;border-radius:99px;font-size:13px;font-weight:700;white-space:nowrap}
+.pill.ok{background:var(--okSoft);color:var(--ok)}.pill.no{background:var(--badSoft);color:var(--bad)}.pill.mid{background:var(--sand);color:#86671B}
+.score{display:flex;gap:12px;align-items:flex-start;padding:9px 0;border-bottom:1px solid var(--line)}
+.score:last-child{border:0}
+.block-title{font-size:17px;margin:26px 0 10px}
+
+/* успех */
+.success{display:flex;gap:16px;align-items:center;background:var(--okSoft);border-radius:18px;padding:16px 18px;margin-top:18px}
+.success svg{flex:none}
+.success .ck{stroke-dasharray:30;stroke-dashoffset:30;animation:draw .6s .15s ease forwards}
+@keyframes draw{to{stroke-dashoffset:0}}
+.success .st{flex:1;font-weight:700;color:#2B5E43}
+.success .st small{display:block;font-weight:500}
+.tryagain{background:var(--badSoft);color:#7D3A28;border-radius:16px;padding:13px 16px;margin-top:14px;font-weight:600}
+.takeaway{background:var(--surface);border-radius:24px;padding:28px;box-shadow:var(--shadow);text-align:center}
+.takeaway .big{font-size:52px;line-height:1;margin-bottom:12px;display:inline-block;animation:pop .6s cubic-bezier(.2,1.4,.4,1)}
+.takeaway h2{margin-bottom:10px}
+.takeaway .tk{font-size:19px;max-width:560px;margin:0 auto 6px}
+.toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:var(--ink);color:#fff;padding:12px 20px;border-radius:14px;font-weight:700;z-index:40;animation:toast 2.4s ease forwards;box-shadow:0 10px 30px rgba(0,0,0,.2)}
+@keyframes toast{0%{opacity:0;transform:translate(-50%,10px)}12%,85%{opacity:1;transform:translate(-50%,0)}100%{opacity:0;transform:translate(-50%,10px)}}
+#confetti{position:fixed;inset:0;pointer-events:none;z-index:35}
+.spin{display:inline-block;width:15px;height:15px;border:2.5px solid var(--accentSoft);border-top-color:var(--accent);border-radius:50%;animation:sp .8s linear infinite;vertical-align:-2px;margin-right:6px}
+@keyframes sp{to{transform:rotate(360deg)}}
+footer{padding:20px 0 40px;color:var(--soft);font-size:14px}
+</style>
+</head>
+<body>
+<header class="top"><div class="wrap">
+  <button class="logo" data-go="home"><span class="mark">✦</span>Агент в классе</button>
+  <span class="spacer"></span>
+  <span class="mini" id="mini"></span>
+</div></header>
+<main id="app"></main>
+<footer><div class="wrap">Все данные в заданиях придуманы. Реальные сведения об учениках здесь вводить не нужно.</div></footer>
+<canvas id="confetti"></canvas>
+
+<script>
+// =============== КУРС ===============
+const C = ['var(--sageSoft)','var(--accentSoft)','var(--peachSoft)','var(--sand)'];
+const LESSONS = [
+{ id:'l1', title:'Знакомство: кто такой ИИ-агент', short:'Чем агент отличается от обычного чат-бота', min:10,
+  intro:`<p>Представьте воскресный вечер. Завтра пять уроков, нужно подготовить самостоятельную, адаптировать текст для двух учеников и ответить родителям в чате.</p>
+  <p>Обычный чат-бот поможет с каждым кусочком, если правильно спросить. А ИИ-агент может взять задачу целиком: сам разобьёт её на шаги, найдёт нужное в материалах и принесёт черновик на проверку.</p>
+  <p>В этом уроке разберёмся, чем они отличаются и почему главным всё равно остаётесь вы.</p>`,
+  cards:[
+    {i:'💬', h:'Чат-бот отвечает', t:'Вы задаёте вопрос и получаете ответ. Один вопрос, один ответ. Всё остальное придумываете и делаете вы.'},
+    {i:'🧭', h:'Агент действует', t:'Агент получает цель, например «подготовь самостоятельную по дробям», сам решает, что для этого нужно, и шаг за шагом это делает.'},
+    {i:'🤝', h:'Вы — руководитель', t:'Агент похож на старательного стажёра: быстрый, но иногда ошибается. Итог проверяете и утверждаете вы.'},
+  ],
+  practice:{type:'quiz', intro:'Три коротких вопроса. Если ошибётесь, ничего страшного: прочитайте подсказку и выберите другой вариант.', qs:[
+    {q:'Учитель спрашивает: «Что такое фотосинтез?» — и получает ответ. Что это?', o:['Работа ИИ-агента','Обычный разговор с чат-ботом'], a:1, e:'Здесь один вопрос и один ответ, без плана и инструментов. Это чат-бот.'},
+    {q:'Что агент делает перед тем, как приступить к задаче?', o:['Сразу пишет готовый текст','Составляет план шагов','Просит пароль от электронного журнала'], a:1, e:'Агент сначала думает: что нужно найти, что сделать и как проверить результат.'},
+    {q:'Кто отвечает за материал, который получат ученики?', o:['Агент','Компания, которая сделала ИИ','Учитель'], a:2, e:'Агент готовит черновик, а проверяет и утверждает его учитель.'},
+  ]},
+  takeaway:'Агент берёт задачу целиком и сам планирует шаги. Но последнее слово всегда за учителем.'},
+
+{ id:'l2', title:'Как агент думает', short:'Цель, план, действия, проверка', min:10,
+  intro:`<p>Когда вы готовитесь к уроку, вы не делаете всё сразу. Сначала решаете, что хотите получить, потом ищете материал, подбираете задания и в конце проверяете, всё ли сходится.</p>
+  <p>Агент работает точно так же. Если понимать его «ход мыслей», становится ясно, где ему нужна ваша помощь.</p>`,
+  cards:[
+    {i:'🎯', h:'Цель', t:'Что нужно получить, для кого и в каком объёме. Чем точнее цель, тем меньше агенту приходится угадывать.'},
+    {i:'🗺️', h:'План', t:'Агент разбивает цель на шаги: найти тему, подобрать задания, оформить результат.'},
+    {i:'🔧', h:'Действия', t:'Каждый шаг агент выполняет сам: ищет в материалах, считает, пишет текст.'},
+    {i:'🔍', h:'Проверка', t:'Хороший агент сверяет результат с целью и только потом отдаёт его вам.'},
+  ],
+  practice:{type:'order', intro:'Задача агента: «Подбери 10 задач для самостоятельной работы по теме „Проценты“, 6 класс». Нажимайте на шаги в том порядке, в каком агент должен их выполнять.',
+    items:['Уточнить цель: тема, класс, сколько задач','Найти тему в учебнике','Подобрать задачи разного уровня','Проверить ответы и количество задач','Отдать учителю на проверку'],
+    e:'Сначала цель, потом материал, затем задачи, проверка и только в конце передача учителю. Если агент пропускает проверку, ошибки достаются вам.'},
+  takeaway:'У агента всегда одна схема: цель → план → действия → проверка. Ошибки обычно прячутся на стыке этих шагов.'},
+
+{ id:'l3', title:'Журнал агента', short:'Смотрим, что агент делает и почему', min:15,
+  intro:`<p>Самое ценное в работе с агентом — возможность заглянуть ему «через плечо». Каждый его шаг записывается в журнал: о чём он подумал, куда заглянул, что решил.</p>
+  <p>Сейчас вы запустите агента и посмотрите журнал. В нём есть один шаг, на котором агент повёл себя не так, как ждёт учитель. Попробуйте его заметить.</p>`,
+  cards:[
+    {i:'💭', h:'Рассуждение', t:'Агент обдумывает задачу и решает, что делать дальше.'},
+    {i:'🔧', h:'Инструмент', t:'Агент обращается к учебнику, таблице или банку задач.'},
+    {i:'✓', h:'Результат', t:'Агент отдаёт готовую работу на вашу проверку.'},
+  ],
+  practice:{type:'log'},
+  takeaway:'Журнал помогает поймать момент, когда агент самовольно меняет задачу. В такие моменты он должен спрашивать вас.'},
+
+{ id:'l4', title:'Инструкция, которая работает', short:'Роль, цель, ограничения, формат', min:10,
+  intro:`<p>Многие разочаровываются в ИИ после первого запроса «сделай тест по истории». Результат получается общим и скучным.</p>
+  <p>Дело не в ИИ, а в инструкции. Представьте, что вы объясняете задачу новому коллеге, который ничего не знает о вашем классе. Что ему нужно сказать?</p>`,
+  cards:[
+    {i:'🧑‍🏫', h:'Роль', t:'Кем работает агент: «помощник учителя истории», «методист начальной школы».'},
+    {i:'🎯', h:'Цель', t:'Что получить, для какого класса и в каком объёме: «10 вопросов, 8 класс».'},
+    {i:'🚧', h:'Ограничения', t:'Чего делать не нужно: «не спрашивай точные даты», «не ставь оценку».'},
+    {i:'📋', h:'Формат', t:'В каком виде нужен результат: таблица, список, текст для печати.'},
+  ],
+  practice:{type:'quiz', intro:'В каждой паре выберите инструкцию, с которой агент справится лучше.', qs:[
+    {q:'Нужен тест по истории.', o:['«Сделай тест по истории».','«Ты помощник учителя истории. Составь тест из 10 вопросов с 4 вариантами ответа по теме „Пётр I“, 8 класс. Отметь правильные ответы. Не спрашивай точные даты».'], a:1, e:'Во второй инструкции есть роль, тема, класс, объём, формат и ограничение. Агенту не нужно угадывать.'},
+    {q:'Нужно адаптировать текст для 3 класса.', o:['«Перепиши текст про вулканы для 3 класса: предложения не длиннее 10 слов, каждый термин объясни, в конце 3 вопроса на понимание».','«Упрости текст».'], a:0, e:'Хорошая инструкция объясняет, что значит «проще», понятными правилами.'},
+    {q:'Нужно проверить диктанты.', o:['«Проверь 5 диктантов 4 класса: отметь орфографические ошибки и посчитай их. Оценку не ставь. Итог дай таблицей: номер работы, число ошибок, самая частая ошибка».','«Проверь диктанты».'], a:0, e:'Первая инструкция задаёт и критерии, и формат результата. Такую таблицу удобно сразу использовать.'},
+  ]},
+  takeaway:'Роль, цель, ограничения и формат превращают общий запрос в понятное задание.'},
+
+{ id:'l5', title:'Границы: что агент решает сам', short:'Когда агенту нужно спросить вас', min:10,
+  intro:`<p>Хороший помощник не бегает к руководителю с каждой мелочью, но и не принимает важных решений сам.</p>
+  <p>С агентом так же. В инструкции полезно прямо написать, где он свободен, а где должен остановиться и спросить вас.</p>`,
+  cards:[
+    {i:'🟢', h:'Сам', t:'Оформление, подбор примеров, перефразирование, черновики. Всё, что легко поправить.'},
+    {i:'✋', h:'Спросить учителя', t:'Смена темы и цели, оценки, отправка писем, всё, что касается конкретных детей и необратимых действий.'},
+  ],
+  practice:{type:'sort', intro:'Решите для каждой ситуации: агент может сделать это сам или должен сначала спросить учителя?', a:'Может сам', b:'Спросить учителя', items:[
+    {t:'Переформулировать условие задачи проще', k:'a', e:'Это черновик, вы его увидите и при необходимости поправите.'},
+    {t:'Заменить тему урока на «более удобную»', k:'b', e:'Тема урока — это ваше решение. Менять цель без согласования нельзя.'},
+    {t:'Выбрать, как оформить план урока: таблицей или списком', k:'a', e:'Оформление легко поменять, здесь агент вполне может решить сам.'},
+    {t:'Отправить письмо родителям', k:'b', e:'Отправку не отменить. Агент готовит черновик, а отправляете вы.'},
+    {t:'Поставить оценку в электронный журнал', k:'b', e:'Оценка — педагогическое решение и ответственность учителя.'},
+    {t:'Подобрать ещё пару примеров к теме', k:'a', e:'Дополнительные примеры ничему не мешают, вы просто выберете лучшие.'},
+  ]},
+  takeaway:'Мелочи агент решает сам. Цель, оценки и всё необратимое — только через вас.'},
+
+{ id:'l6', title:'Инструменты агента', short:'Учебник, данные класса, банк задач', min:10,
+  intro:`<p>Агент без инструментов знает только то, что «вычитал» когда-то в интернете. Поэтому он может уверенно ошибаться.</p>
+  <p>Инструменты дают ему опору: ваш учебник, сводку по классу, проверенный банк задач. Важно понимать, какой инструмент нужен для какой задачи.</p>`,
+  cards:[
+    {i:'📘', h:'Учебник', t:'Параграфы, правила, определения. Помогает агенту не выдумывать факты.'},
+    {i:'📊', h:'Данные класса', t:'Сводка без имён: сколько учеников, у кого какие трудности. Помогает подстроить материал.'},
+    {i:'🧩', h:'Банк задач', t:'Проверенные задания по уровням. Агенту не нужно сочинять их с нуля.'},
+  ],
+  practice:{type:'sort', intro:'Какой инструмент понадобится агенту для каждой задачи?', opts:['Учебник','Данные класса','Банк задач','Ничего не нужно'], items:[
+    {t:'Узнать правило из параграфа про сложение дробей', k:0, e:'Правила и определения агент берёт из учебника.'},
+    {t:'Понять, скольким ученикам нужна дополнительная поддержка', k:1, e:'Это сводка по классу. Имена для этого не нужны.'},
+    {t:'Подобрать упражнения трёх уровней сложности', k:2, e:'В банке задач уже есть проверенные задания по уровням.'},
+    {t:'Переписать абзац, который вы прислали, простыми словами', k:3, e:'Текст уже есть в запросе, никакой инструмент не нужен.'},
+  ]},
+  takeaway:'Инструменты — это опора агента. Учебник даёт факты, данные класса помогают подстроиться, банк задач экономит время.'},
+
+{ id:'l7', title:'Проверяем результат', short:'Ищем ошибки в работе агента', min:15,
+  intro:`<p>ИИ пишет гладко и уверенно, даже когда ошибается. Поэтому проверка — не недоверие, а нормальная часть работы, как проверка тетрадей.</p>
+  <p>Ошибки бывают трёх видов: неверный факт, нестыковка в логике и ошибка в расчётах. Сейчас вы найдёте по одной ошибке каждого вида.</p>`,
+  cards:[
+    {i:'📖', h:'Сверяйте факты', t:'Всё важное сверяйте с учебником или надёжным источником.'},
+    {i:'🧮', h:'Пересчитывайте', t:'Минуты урока, баллы, количество заданий: числа ИИ путает чаще, чем кажется.'},
+    {i:'🔗', h:'Ищите противоречия', t:'Объяснения в начале и в конце должны говорить одно и то же.'},
+  ],
+  practice:{type:'finderr'},
+  takeaway:'Сверяйте факты, пересчитывайте числа, ищите противоречия. Три минуты проверки экономят урок.'},
+
+{ id:'l8', title:'Данные учеников под защитой', short:'Что нельзя отправлять ИИ', min:15,
+  intro:`<p>Когда вы пишете запрос ИИ-сервису, текст уходит на чужие серверы. Поэтому личные данные детей туда отправлять нельзя, даже ради удобства.</p>
+  <p>Хорошая новость: для большинства задач они и не нужны. Достаточно заменить их заглушками и подставить настоящие данные уже в готовый текст.</p>`,
+  cards:[
+    {i:'🙅', h:'Не отправляем', t:'ФИО учеников и родителей, телефоны, адреса, сведения о здоровье и семье.'},
+    {i:'🧩', h:'Заглушки', t:'Пишите [Имя ученика], [Имя родителя]. Агенту этого хватает.'},
+    {i:'🕵️', h:'Сочетания тоже важны', t:'«Мальчик из 7Б, который часто болеет» тоже указывает на конкретного ребёнка.'},
+  ],
+  practice:{type:'privacy'},
+  takeaway:'Личные данные детей остаются у вас. Агенту хватает заглушек вроде [Имя ученика].'},
+
+{ id:'l9', title:'Собираем своего агента', short:'Конструктор с живым ИИ', min:25,
+  intro:`<p>Вы уже знаете всё, чтобы собрать агента самостоятельно: цель, правила, инструменты и проверка.</p>
+  <p>Ниже конструктор с настоящим ИИ. Поля уже заполнены примером, но лучше поменяйте их под себя. После запуска загляните в журнал и проверьте результат.</p>`,
+  cards:[
+    {i:'🧱', h:'Из блоков', t:'Роль, цель, правила, формат и проверка. Всё, что было в предыдущих уроках.'},
+    {i:'🔧', h:'С инструментами', t:'Учебник, данные класса и банк задач с придуманными данными для тренировки.'},
+    {i:'👀', h:'Под вашим контролем', t:'В журнале видно каждое действие агента. Результат принимаете вы.'},
+  ],
+  practice:{type:'builder'},
+  takeaway:'Вы собрали агента, посмотрели, как он работает, и проверили результат. Это и есть главный навык.'},
+
+{ id:'l10', title:'Агент для вашего предмета', short:'Итоговый проект', min:20,
+  intro:`<p>Последний шаг — самый полезный. Вспомните задачу, которая отнимает у вас больше всего времени каждую неделю: проверка, подготовка вариантов, отчёты, письма.</p>
+  <p>Опишите её своими словами. ИИ-методист поможет превратить описание в готовую карточку агента, которую можно сразу пробовать.</p>`,
+  cards:[
+    {i:'⏳', h:'Выберите рутину', t:'Задачу, которая повторяется каждую неделю и не требует личных данных детей.'},
+    {i:'📝', h:'Опишите как коллеге', t:'Что вы обычно делаете, что получается в итоге, что важно не упустить.'},
+    {i:'🚀', h:'Попробуйте на неделе', t:'Запустите агента на одной задаче и сравните с тем, как делали раньше.'},
+  ],
+  practice:{type:'project'},
+  takeaway:'Теперь у вас есть собственный агент под реальную задачу. Попробуйте его на этой неделе и поделитесь с коллегами.'},
+];
+LESSONS.forEach((l,i)=>{ l.n=i+1; l.c=C[i%C.length]; });
+
+// =============== СОСТОЯНИЕ ===============
+let done=new Set(), myAgents=[], db=null, userId=null;
+const LS=(k,v)=>{ try{ if(v===undefined) return JSON.parse(localStorage.getItem(k)||'null'); localStorage.setItem(k,JSON.stringify(v)); }catch(e){ return null; } };
+done=new Set(LS('aic-done')||[]); myAgents=LS('aic-agents')||[];
+async function initCloud(){
+  try{
+    if(!window.claude||!window.claude.use) return;
+    const [d,u]=await Promise.all([claude.use('db'),claude.use('user')]);
+    if(!d||!u) return; const id=await u.id(); if(!id) return;
+    db=d; userId=id;
+    const snap=await db.collection('data/users/'+id).doc('progress').get();
+    const data=snap&&(typeof snap.data==='function'?snap.data():snap);
+    if(data){ (data.done||[]).forEach(x=>done.add(x)); (data.agents||[]).forEach(a=>{ if(!myAgents.some(m=>m.id===a.id)) myAgents.push(a); }); }
+    LS('aic-done',[...done]); LS('aic-agents',myAgents);
+    saveCloud(); if(!location.hash) render(); else renderMini();
+  }catch(e){}
+}
+let saving=false, again=false;
+async function saveCloud(){
+  if(!db||!userId) return; if(saving){ again=true; return; } saving=true;
+  try{ await db.collection('data/users/'+userId).doc('progress').set({done:[...done],agents:myAgents,updated:new Date().toISOString()}); }catch(e){}
+  saving=false; if(again){ again=false; saveCloud(); }
+}
+function markDone(id){ if(done.has(id)) return; done.add(id); LS('aic-done',[...done]); saveCloud(); renderMini(); }
+
+// =============== ИИ ===============
+let sp=null; const getSample=()=>sp||(sp=(window.claude&&window.claude.use)?claude.use('sample').catch(()=>null):Promise.resolve(null));
+
+// =============== УТИЛИТЫ ===============
+const $=(s,el=document)=>el.querySelector(s), $$=(s,el=document)=>[...el.querySelectorAll(s)];
+const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const shuffle=a=>{ a=[...a]; for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; };
+function toast(t){ const d=document.createElement('div'); d.className='toast'; d.textContent=t; document.body.appendChild(d); setTimeout(()=>d.remove(),2500); }
+function md(src){
+  const lines=String(src).split('\n'); let h='', inL=false, tbl=[];
+  const il=s=>esc(s).replace(/\*\*(.+?)\*\*/g,'<b>$1</b>');
+  const fT=()=>{ if(!tbl.length) return; const rows=tbl.filter(r=>!/^\s*\|?\s*:?-{2,}/.test(r)); h+='<table>'+rows.map((r,i)=>'<tr>'+r.replace(/^\s*\|/,'').replace(/\|\s*$/,'').split('|').map(c=>`<${i?'td':'th'}>${il(c.trim())}</${i?'td':'th'}>`).join('')+'</tr>').join('')+'</table>'; tbl=[]; };
+  const cL=()=>{ if(inL){ h+='</ul>'; inL=false; } };
+  for(const raw of lines){ const l=raw.trimEnd();
+    if(/^\s*\|/.test(l)){ cL(); tbl.push(l); continue; } else fT();
+    if(/^#{1,4}\s/.test(l)){ cL(); h+='<h4>'+il(l.replace(/^#+\s/,''))+'</h4>'; continue; }
+    if(/^\s*([-*•]|\d+[.)])\s+/.test(l)){ if(!inL){ h+='<ul>'; inL=true; } h+='<li>'+il(l.replace(/^\s*([-*•]|\d+[.)])\s+/,''))+'</li>'; continue; }
+    cL(); if(l.trim()) h+='<p>'+il(l)+'</p>'; }
+  fT(); cL(); return h;
+}
+const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
+function confetti(){
+  if(reduced) return; const cv=$('#confetti'), ctx=cv.getContext('2d'); cv.width=innerWidth; cv.height=innerHeight;
+  const cols=['#6C5FC7','#9A8FE0','#6E9C83','#E9A586','#E8CF8A']; const ps=Array.from({length:90},()=>({x:innerWidth/2+(Math.random()-.5)*200,y:innerHeight*.45,vx:(Math.random()-.5)*9,vy:-Math.random()*11-4,s:Math.random()*6+4,r:Math.random()*6,vr:(Math.random()-.5)*.3,c:cols[Math.floor(Math.random()*cols.length)]}));
+  let t=0; (function f(){ ctx.clearRect(0,0,cv.width,cv.height); ps.forEach(p=>{ p.vy+=.32; p.x+=p.vx; p.y+=p.vy; p.r+=p.vr; ctx.save(); ctx.translate(p.x,p.y); ctx.rotate(p.r); ctx.globalAlpha=Math.max(0,1-t/110); ctx.fillStyle=p.c; ctx.fillRect(-p.s/2,-p.s/3,p.s,p.s*.6); ctx.restore(); }); if(++t<110) requestAnimationFrame(f); else ctx.clearRect(0,0,cv.width,cv.height); })();
+}
+function observeReveal(){ const io=new IntersectionObserver(es=>es.forEach(e=>{ if(e.isIntersecting){ e.target.classList.add('on'); io.unobserve(e.target); } }),{threshold:.1}); $$('.reveal').forEach((el,i)=>{ el.style.transitionDelay=Math.min(i*60,400)+'ms'; io.observe(el); }); }
+const nextLesson=()=>LESSONS.find(l=>!done.has(l.id));
+const CHECK=`<svg width="40" height="40" viewBox="0 0 40 40"><circle cx="20" cy="20" r="19" fill="#3E8660"/><path class="ck" d="M12 20.5l5.5 5.5L28.5 15" fill="none" stroke="#fff" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+
+// =============== НАВИГАЦИЯ ===============
+function go(v){ if(v==='home'){ history.pushState(null,'',location.pathname+location.search); render(); } else location.hash=v; window.scrollTo({top:0}); }
+addEventListener('hashchange',()=>{ render(); window.scrollTo({top:0}); });
+addEventListener('popstate',()=>render());
+document.addEventListener('click',e=>{ const g=e.target.closest('[data-go]'); if(g){ e.preventDefault(); go(g.dataset.go); } });
+function renderMini(){ const n=done.size; $('#mini').innerHTML=`<span class="track"><i style="width:${n*10}%"></i></span>${n}/10`; }
+function render(){ renderMini(); const h=location.hash.slice(1); const l=LESSONS.find(x=>x.id===h); l?renderLesson(l):renderHome(); }
+
+// =============== ГЛАВНАЯ ===============
+function greet(){ const h=new Date().getHours(); return h<6?'Доброй ночи':h<12?'Доброе утро':h<18?'Добрый день':'Добрый вечер'; }
+function renderHome(){
+  const n=done.size, nl=nextLesson(), C2=2*Math.PI*36;
+  $('#app').innerHTML=`<div class="view"><div class="wrap">
+  <section class="hello">
+    <div class="eyebrow">${greet()}!</div>
+    <h1>Научимся работать с ИИ-агентами — спокойно и на своих задачах</h1>
+    <p class="sub">10 коротких уроков. В каждом немного теории и одно практическое задание из учительской жизни. Можно проходить по 15 минут в день.</p>
+  </section>
+  <div class="continue reveal">
+    <div class="ring"><svg width="84" height="84"><circle class="bgc" cx="42" cy="42" r="36" fill="none" stroke-width="8"/><circle class="fg" cx="42" cy="42" r="36" fill="none" stroke-width="8" stroke-dasharray="${C2}" stroke-dashoffset="${C2}" data-off="${C2*(1-n/10)}"/></svg><b>${n*10}%</b></div>
+    <div class="ct">${nl?`<small>${n?'Продолжим с того места, где остановились':'Начнём с первого урока'}</small><h3>Урок ${nl.n}. ${nl.title}</h3><p>${nl.short} · ${nl.min} минут</p>`:`<small>Курс пройден</small><h3>Вы прошли все 10 уроков 🎉</h3><p>Возвращайтесь к любому уроку, когда захотите освежить знания.</p>`}</div>
+    ${nl?`<button class="btn" data-go="${nl.id}">${n?'Продолжить':'Начать'} <span class="arr">→</span></button>`:''}
+  </div>
+  <h2 class="sec-title reveal">Программа курса</h2>
+  <div class="lessons">${LESSONS.map(l=>`
+    <button class="lesson reveal ${done.has(l.id)?'done':''} ${nl&&nl.id===l.id?'current':''}" data-go="${l.id}" style="--c:${l.c}">
+      <span class="ln">${done.has(l.id)?'✓':l.n}</span>
+      <span class="lt"><b>${l.title}</b><span>${l.short}</span></span>
+      <span class="lm">${l.min} мин</span>
+    </button>`).join('')}</div>
+  ${myAgents.length?`<h2 class="sec-title reveal">Мои агенты</h2><div class="myagents">${myAgents.map(agentCard).join('')}</div>`:''}
+  </div></div>`;
+  observeReveal();
+  requestAnimationFrame(()=>setTimeout(()=>{ const f=$('.ring .fg'); if(f) f.style.strokeDashoffset=f.dataset.off; },150));
+}
+function agentCard(a){ return `<div class="agentcard reveal"><h3>${esc(a.name)}</h3><p class="hint" style="margin:0">${esc(a.subject||'')}</p><dl>
+  <dt>Роль</dt><dd>${esc(a.role)}</dd><dt>Цель</dt><dd>${esc(a.goal)}</dd><dt>Инструменты</dt><dd>${esc(a.tools)}</dd><dt>Правила</dt><dd>${esc(a.rules)}</dd><dt>Формат</dt><dd>${esc(a.format)}</dd><dt>Проверка</dt><dd>${esc(a.check)}</dd>${a.first_test?`<dt>Первый тест</dt><dd>${esc(a.first_test)}</dd>`:''}</dl></div>`; }
+
+// =============== УРОК ===============
+const STAGES=['Знакомство','Теория','Практика','Итог'];
+let L=null, stage=0, passed=false;
+function renderLesson(l){
+  if(!L||L.id!==l.id){ L=l; stage=0; passed=done.has(l.id); }
+  $('#app').innerHTML=`<div class="view"><div class="wrap lessonpage">
+    <div class="lhead"><button class="btn plain" data-go="home">← Все уроки</button><span class="spacer"></span><span class="tag">Урок ${l.n} из 10 · ${l.min} мин</span></div>
+    <div class="steps" id="steps"></div>
+    <div id="stage"></div>
+  </div></div>`;
+  drawStage();
+}
+function drawSteps(){ $('#steps').innerHTML=STAGES.map((s,i)=>{ const can=i<=2||passed; return `<button class="s ${i<stage?'past':''} ${i===stage?'cur':''}" ${can?`data-stage="${i}"`:'disabled'}><i></i>${s}</button>`; }).join(''); $$('#steps [data-stage]').forEach(b=>b.onclick=()=>{ stage=+b.dataset.stage; drawStage(); }); }
+function setStage(i){ stage=i; drawStage(); window.scrollTo({top:0,behavior:reduced?'auto':'smooth'}); }
+function drawStage(){
+  drawSteps(); const l=L, box=$('#stage');
+  if(stage===0){ box.innerHTML=`<div class="stage"><h2>${l.title}</h2><div class="story">${l.intro}</div><div class="navrow"><span class="spacer"></span><button class="btn" id="nx">К теории <span class="arr">→</span></button></div></div>`; $('#nx').onclick=()=>setStage(1); }
+  if(stage===1){ box.innerHTML=`<div class="stage"><h2>Коротко о главном</h2><div class="cards">${l.cards.map(c=>`<div class="tcard reveal" style="--c:${l.c}"><div class="ti">${c.i}</div><div><h3>${c.h}</h3><p>${c.t}</p></div></div>`).join('')}</div><div class="navrow"><button class="btn plain" id="bk">← Назад</button><span class="spacer"></span><button class="btn" id="nx">К практике <span class="arr">→</span></button></div></div>`; observeReveal(); $('#bk').onclick=()=>setStage(0); $('#nx').onclick=()=>setStage(2); }
+  if(stage===2){ box.innerHTML=`<div class="stage"><h2>Практика</h2><div class="panel" id="prac"></div><div id="succ"></div><div class="navrow"><button class="btn plain" id="bk">← К теории</button></div></div>`; $('#bk').onclick=()=>setStage(1); PRACTICE[l.practice.type]($('#prac'),l.practice,onPass); if(passed) showSuccess(true); }
+  if(stage===3){ const nl=LESSONS[l.n]; const all=done.size===10; box.innerHTML=`<div class="stage"><div class="takeaway"><div class="big">${all?'🎓':'🌱'}</div><h2>${all?'Курс пройден!':'Урок пройден'}</h2><p class="tk">${l.takeaway}</p>${all?'<p class="hint">Вы прошли все 10 уроков. Ваш агент сохранён на главной странице.</p>':''}<div class="navrow" style="justify-content:center">${nl?`<button class="btn" data-go="${nl.id}">Урок ${nl.n}: ${nl.title} <span class="arr">→</span></button>`:''}<button class="btn soft" data-go="home">На главную</button></div></div></div>`; if(all) confetti(); }
+}
+function onPass(){ if(!passed){ passed=true; markDone(L.id); confetti(); } showSuccess(false); drawSteps(); }
+function showSuccess(quiet){ const s=$('#succ'); if(!s) return; s.innerHTML=`<div class="success ${quiet?'':'pop'}">${CHECK}<div class="st">Отлично, задание выполнено!<small>Осталось прочитать короткий итог урока.</small></div><button class="btn" id="toEnd">Итог <span class="arr">→</span></button></div>`; $('#toEnd').onclick=()=>setStage(3); }
+
+// =============== ПРАКТИКИ ===============
+const PRACTICE={
+quiz(el,p,pass){
+  const ok=new Set();
+  el.innerHTML=`<div class="task-intro">${p.intro}</div>`+p.qs.map((x,i)=>`<div class="q" data-q="${i}"><div class="qt">${i+1}. ${x.q}</div>${x.o.map((o,j)=>`<button class="opt" data-i="${i}" data-j="${j}">${o}</button>`).join('')}<div class="ex"></div></div>`).join('');
+  $$('.opt',el).forEach(b=>b.onclick=()=>{
+    const i=+b.dataset.i, j=+b.dataset.j, x=p.qs[i], ex=$(`[data-q="${i}"] .ex`,el);
+    if(j===x.a){ $$(`.opt[data-i="${i}"]`,el).forEach(o=>{ o.classList.add('locked'); o.classList.remove('wrong'); }); b.classList.add('right'); ex.innerHTML=`<div class="expl ok">Верно. ${x.e}</div>`; ok.add(i); if(ok.size===p.qs.length) pass(); }
+    else{ b.classList.add('wrong','shake'); setTimeout(()=>b.classList.remove('shake'),400); ex.innerHTML=`<div class="expl no">Не совсем. Подумайте ещё и выберите другой вариант.</div>`; }
+  });
+},
+order(el,p,pass){
+  const correct=p.items; let pool=shuffle(correct); while(pool.join()===correct.join()) pool=shuffle(correct); let seq=[];
+  const draw=()=>{ el.innerHTML=`<div class="task-intro">${p.intro}</div>
+    <div class="colhead">Порядок агента</div><div class="seq">${seq.length?seq.map((t,i)=>`<button class="chip" data-back="${i}"><span class="cn">${i+1}</span>${esc(t)}</button>`).join(''):'<p class="hint">Нажмите на первый шаг ниже.</p>'}</div>
+    <div class="colhead">Шаги</div><div class="pool">${pool.map((t,i)=>`<button class="chip" data-pick="${i}"><span class="cn">·</span>${esc(t)}</button>`).join('')||'<p class="hint">Все шаги расставлены.</p>'}</div>
+    <div class="navrow"><button class="btn" id="chkO" ${seq.length<correct.length?'disabled':''}>Проверить</button><button class="btn plain" id="rstO">Сбросить</button></div><div id="resO"></div>`;
+    $$('[data-pick]',el).forEach(b=>b.onclick=()=>{ seq.push(pool.splice(+b.dataset.pick,1)[0]); draw(); });
+    $$('[data-back]',el).forEach(b=>b.onclick=()=>{ pool.push(seq.splice(+b.dataset.back,1)[0]); draw(); });
+    $('#rstO',el).onclick=()=>{ pool=shuffle(correct); seq=[]; draw(); };
+    $('#chkO',el).onclick=()=>{ let good=0; $$('.seq .chip',el).forEach((c,i)=>{ const r=seq[i]===correct[i]; c.classList.add(r?'right':'wrong'); if(r) good++; });
+      if(good===correct.length){ $('#resO',el).innerHTML=`<div class="expl ok">Всё верно! ${p.e}</div>`; $$('.chip',el).forEach(c=>c.disabled=true); pass(); }
+      else $('#resO',el).innerHTML=`<div class="tryagain">На своих местах ${good} из ${correct.length}. Нажмите на шаг, чтобы вернуть его, и попробуйте ещё раз.</div>`; };
+  }; draw();
+},
+sort(el,p,pass){
+  const opts=p.opts||[p.a,p.b]; const keyOf=it=>typeof it.k==='number'?it.k:(it.k==='a'?0:1); const ok=new Set();
+  el.innerHTML=`<div class="task-intro">${p.intro}</div>`+p.items.map((it,i)=>`<div class="sortitem" data-it="${i}"><div class="st">${esc(it.t)}</div><div class="bs">${opts.map((o,j)=>`<button data-i="${i}" data-j="${j}">${o}</button>`).join('')}</div><div class="ex"></div></div>`).join('');
+  $$('.bs button',el).forEach(b=>b.onclick=()=>{
+    const i=+b.dataset.i, j=+b.dataset.j, it=p.items[i], box=$(`[data-it="${i}"]`,el);
+    $$('button',box).forEach(x=>x.classList.remove('chosen')); b.classList.add('chosen');
+    if(j===keyOf(it)){ box.className='sortitem okk'; $('.ex',box).innerHTML=`<div class="expl ok">${it.e}</div>`; $$('button',box).forEach(x=>x.disabled=true); ok.add(i); if(ok.size===p.items.length) pass(); }
+    else{ box.className='sortitem nok'; box.classList.add('shake'); setTimeout(()=>box.classList.remove('shake'),400); $('.ex',box).innerHTML=`<div class="expl no">Попробуйте другой вариант.</div>`; }
+  });
+},
+log(el,p,pass){
+  const S=[
+    {k:'think',a:'Читает задачу',w:'Тема «Сложение дробей», 5 класс, урок 45 минут.'},
+    {k:'tool',a:'Ищет в учебнике «сложение дробей»',w:'Хочет опираться на учебник, а не придумывать.'},
+    {k:'tool',a:'Смотрит сводку по классу',w:'Четырём ученикам из 25 нужна поддержка по обыкновенным дробям.'},
+    {k:'think',a:'Составляет структуру урока',w:'Повторение, новая тема, практика, итог.'},
+    {k:'think',a:'Добавляет задания трёх уровней',w:'Чтобы каждый ученик мог справиться.'},
+    {k:'think',a:'Меняет тему на «Десятичные дроби»',w:'Этот параграф нашёлся раньше, и агент решил, что так удобнее.'},
+    {k:'think',a:'Проверяет тайминг',w:'5 + 10 + 20 + 10 = 45 минут.'},
+    {k:'done',a:'Отдаёт план урока учителю',w:'Готово к проверке.'},
+  ];
+  el.innerHTML=`<div class="task-intro">Задача агента: «Подготовь план урока по теме „Сложение дробей“, 5 класс, 45 минут». Запустите его и следите за журналом.</div>
+    <button class="btn" id="runL">▶ Запустить агента</button><div class="log" id="logL" style="margin-top:16px"></div><div id="qL"></div>`;
+  $('#runL',el).onclick=()=>{ $('#runL',el).disabled=true; const box=$('#logL',el); let i=0;
+    const tick=()=>{ if(i<S.length){ box.insertAdjacentHTML('beforeend','<div class="typing" id="tp"><i></i><i></i><i></i></div>'); setTimeout(()=>{ $('#tp',el)?.remove(); box.insertAdjacentHTML('beforeend',stepHTML(S[i],i)); i++; tick(); },reduced?0:550); } else ask(); }; tick(); };
+  function ask(){ $('#qL',el).innerHTML=`<div class="task-intro" style="margin-top:18px">На каком шаге агенту нужно было остановиться и спросить учителя? Нажмите на этот шаг.</div><div id="rL"></div>`;
+    $$('#logL .step',el).forEach(b=>{ b.classList.add('pick'); b.onclick=()=>{ const i=+b.dataset.step; $$('#logL .step',el).forEach(x=>x.classList.remove('right','wrong'));
+      if(i===5){ b.classList.add('right'); $('#rL',el).innerHTML='<div class="expl ok">Именно так. Агент сам поменял тему урока, хотя цель задал учитель. В такой момент он должен был спросить.</div>'; $$('#logL .step',el).forEach(x=>x.onclick=null); pass(); }
+      else{ b.classList.add('wrong','shake'); $('#rL',el).innerHTML='<div class="expl no">С этим шагом всё в порядке. Ищите момент, где агент изменил то, о чём его просили.</div>'; } }; }); }
+},
+finderr(el,p,pass){
+  const D=[
+    {t:'План урока физики, 8 класс. Тема: «Тепловые явления».'},
+    {t:'Цель урока: познакомить учеников с видами теплопередачи.'},
+    {t:'Существует три вида теплопередачи: теплопроводность, конвекция и излучение.'},
+    {t:'Металлы хорошо проводят тепло, поэтому ручки кастрюль часто делают из дерева или пластика.'},
+    {t:'Вода при нормальном атмосферном давлении кипит при 50 °C.', e:'Факт: вода кипит при 100 °C.'},
+    {t:'Пример конвекции: тёплый воздух от батареи поднимается вверх.'},
+    {t:'Солнце нагревает Землю за счёт конвекции через космос.', e:'Логика: в космосе нет вещества для конвекции, Солнце греет Землю излучением. Это противоречит предложению о трёх видах теплопередачи.'},
+    {t:'Опыт: ученики трогают металлическую и деревянную ложки, опущенные в горячую воду.'},
+    {t:'Тайминг на 45 минут: разминка 10 минут, новая тема 20 минут, практика 20 минут.', e:'Расчёт: 10 + 20 + 20 = 50 минут.'},
+    {t:'Домашнее задание: привести три примера теплопередачи из жизни.'},
+  ]; const sel=new Set();
+  el.innerHTML=`<div class="task-intro">Агент подготовил план урока физики. В нём три ошибки: в факте, в логике и в расчёте. Нажмите на предложения с ошибками.</div>
+   <div class="doc">${D.map((s,i)=>`<span class="sent" data-s="${i}">${esc(s.t)}</span> `).join('')}</div>
+   <div class="navrow"><button class="btn" id="chkF">Проверить</button><span class="hint" id="cntF">Отмечено: 0</span></div><div id="rF"></div>`;
+  $$('.sent',el).forEach(s=>s.onclick=()=>{ const i=+s.dataset.s; sel.has(i)?sel.delete(i):sel.add(i); s.className='sent'+(sel.has(i)?' sel':''); $('#cntF',el).textContent='Отмечено: '+sel.size; });
+  $('#chkF',el).onclick=()=>{ let hit=0,extra=0,notes=[];
+    D.forEach((s,i)=>{ const x=$(`[data-s="${i}"]`,el); if(s.e&&sel.has(i)){ hit++; x.className='sent right'; notes.push(s.e); } else if(!s.e&&sel.has(i)){ extra++; x.className='sent wrong'; } else if(s.e) x.className='sent missed'; else x.className='sent'; });
+    if(hit===3&&!extra){ $('#rF',el).innerHTML=`<div class="expl ok">Все три ошибки найдены!<br>• ${notes.join('<br>• ')}</div>`; $$('.sent',el).forEach(s=>s.onclick=null); pass(); }
+    else $('#rF',el).innerHTML=`<div class="tryagain">Найдено ${hit} из 3${extra?`, и ещё ${extra} предложений отмечены зря`:''}. Пропущенные ошибки подчёркнуты красным. Поправьте отметки и проверьте снова.</div>`; };
+},
+privacy(el,p,pass){
+  const DR='Напиши письмо маме Петрова Артёма из 7Б. У него три двойки по алгебре за месяц, он часто пропускает уроки из-за астмы. Телефон мамы +7 912 345-67-89, зовут Ольга Викторовна. Предложи дополнительные занятия по четвергам.';
+  const PII=[{re:/петров|артём|артем/i,l:'фамилия и имя ученика'},{re:/ольг|викторовн/i,l:'имя и отчество мамы'},{re:/\+?\d[\d\s()-]{8,}\d/,l:'номер телефона'},{re:/астм|болезн|диагноз/i,l:'сведения о здоровье'},{re:/7\s?[«"]?Б/i,l:'класс, по которому вместе с остальным легко узнать ребёнка'}];
+  el.innerHTML=`<div class="task-intro">Коллега набросал запрос для ИИ. Отредактируйте его прямо в поле: уберите личные данные, но сохраните смысл.</div>
+    <textarea id="dP" rows="6"></textarea><div class="navrow"><button class="btn" id="chkP">Проверить запрос</button><button class="btn plain" id="rstP">Вернуть исходный текст</button></div><div id="rP"></div><div id="oP"></div>`;
+  const ta=$('#dP',el); ta.value=DR; $('#rstP',el).onclick=()=>{ ta.value=DR; $('#rP',el).innerHTML=''; $('#oP',el).innerHTML=''; };
+  $('#chkP',el).onclick=()=>{ const v=ta.value, left=PII.filter(x=>x.re.test(v)); const sense=/письм/i.test(v)&&/(алгебр|математ|оценк|успеваем|двойк)/i.test(v);
+    if(left.length){ $('#rP',el).innerHTML=`<div class="tryagain">Почти! Ещё осталось: ${left.map(x=>x.l).join(', ')}.</div>`; return; }
+    if(!sense){ $('#rP',el).innerHTML='<div class="tryagain">Личных данных больше нет, но потерялся смысл. В запросе должно остаться, что нужно письмо родителю про успеваемость по алгебре.</div>'; return; }
+    $('#rP',el).innerHTML='<div class="expl ok">Отлично: запрос безопасный, и агенту всё понятно. Можете отправить его и посмотреть, какое письмо получится.</div><div class="navrow"><button class="btn soft" id="sendP">Получить письмо от агента</button></div>'; pass();
+    $('#sendP',el).onclick=async()=>{ const s=await getSample(), o=$('#oP',el);
+      if(!s){ o.innerHTML='<div class="out"><p class="hint">Пример письма (ИИ в этом окне недоступен):</p>'+md('Здравствуйте, [Имя родителя]!\n\nХочу обсудить с вами успеваемость [Имя ученика] по алгебре. За последний месяц у него несколько неудовлетворительных оценок. Предлагаю дополнительные занятия по четвергам после уроков — уверена, вместе мы быстро всё наверстаем.\n\nС уважением, [Имя учителя]')+'</div>'; return; }
+      o.innerHTML='<div class="out"><span class="spin"></span>Агент пишет письмо…</div>';
+      try{ const r=await s(`Ты помощник учителя. Напиши тёплое, вежливое и короткое письмо родителю по запросу учителя. Вместо имён используй заглушки в квадратных скобках: [Имя родителя], [Имя ученика], [Имя учителя]. Не добавляй фактов, которых нет в запросе.\n\nЗапрос учителя: ${ta.value}`,{modelTier:'quick',cache:false,onText:({text})=>{ o.innerHTML='<div class="out">'+md(text)+'</div>'; }}); o.innerHTML='<div class="out">'+md(r.text||'')+'</div><p class="hint" style="margin-top:8px">Настоящие имена подставьте сами, уже в готовое письмо.</p>'; }
+      catch(e){ o.innerHTML='<div class="tryagain">Не получилось связаться с ИИ. Попробуйте ещё раз чуть позже.</div>'; } }; };
+},
+builder(el,p,pass){ builder(el,pass); },
+project(el,p,pass){ project(el,pass); },
+};
+function stepHTML(s,i){ const ic={think:'💭',tool:'🔧',warn:'⚠️',done:'✓'}[s.k]; return `<button class="step ${s.k}" data-step="${i}"><span class="ic">${ic}</span><span><span class="sa">${esc(s.a)}</span><br><span class="sw">${esc(s.w)}</span></span></button>`; }
+
+// =============== КОНСТРУКТОР (живой ИИ) ===============
+const TEXTBOOK=[
+  {k:['дроб','сложени','знаменател'],t:'Математика, 5 класс, §28 «Сложение и вычитание дробей с одинаковыми знаменателями». Правило: числители складывают, знаменатель оставляют тем же. Пример: 2/7 + 3/7 = 5/7. Перед темой повторяют §26 «Обыкновенные дроби».'},
+  {k:['десятичн'],t:'Математика, 5 класс, §32 «Десятичные дроби». Идёт после обыкновенных дробей.'},
+  {k:['фотосинтез','растени'],t:'Биология, 6 класс, §12 «Фотосинтез»: на свету растения образуют органические вещества из углекислого газа и воды и выделяют кислород.'},
+  {k:['тепл','конвекц','излучен'],t:'Физика, 8 класс, §2–6 «Виды теплопередачи»: теплопроводность, конвекция, излучение.'},
+  {k:['вулкан'],t:'Окружающий мир, 3 класс: вулкан — гора, из которой при извержении выходят лава, пепел и газы.'},
+  {k:['пётр','петр','истори'],t:'История России, 8 класс, глава 1 «Россия в эпоху преобразований Петра I».'},
+];
+const CLASSDATA={класс:'5 «В» (придуманный)',учеников:25,уровни:{высокий:6,средний:15,'нужна поддержка':4},заметка:'4 ученика путают числитель и знаменатель. Урок длится 45 минут.'};
+const BANK={'базовый':['1/5 + 2/5','3/8 + 1/8','Закрасьте 2/6 круга, потом ещё 3/6. Какая часть закрашена?'],'средний':['4/9 + 3/9 + 1/9','7/12 − 5/12','Маша прочитала 3/10 книги в понедельник и 4/10 во вторник. Какую часть книги она прочитала?'],'повышенный':['x/11 + 4/11 = 9/11. Найдите x.','Сумма двух дробей со знаменателем 15 равна 13/15. Одна из них 6/15. Найдите другую.','Придумайте задачу с ответом 5/8.']};
+const DEF={role:'Помощник учителя математики',goal:'Подготовь план урока «Сложение дробей с одинаковыми знаменателями» для 5 класса на 45 минут.',rules:'Опирайся только на учебник. Не меняй тему урока. Если чего-то не хватает, задай вопрос учителю, а не придумывай.',format:'Таблица этапов урока с минутами, затем по одному заданию каждого уровня сложности.',check:'Сумма минут по этапам равна 45. Все задания по теме урока.'};
+function builder(el,pass){
+  const d=LS('aic-builder')||{};
+  el.innerHTML=`<div class="task-intro">Поля заполнены примером. Можно сразу нажать «Запустить» или сначала поменять что-нибудь под себя.</div>
+    <label class="f">Роль <small>— кем работает агент</small></label><input type="text" id="b_role">
+    <label class="f">Цель <small>— что получить, для какого класса и в каком объёме</small></label><textarea id="b_goal" rows="2"></textarea>
+    <label class="f">Правила <small>— чего нельзя и когда спросить вас</small></label><textarea id="b_rules" rows="2"></textarea>
+    <label class="f">Формат результата</label><textarea id="b_format" rows="2"></textarea>
+    <label class="f">Как проверить <small>— по какому признаку видно, что результат хороший</small></label><textarea id="b_check" rows="2"></textarea>
+    <details class="more"><summary>Инструменты агента (3 из 3)</summary>
+      <label class="chk"><input type="checkbox" id="tb1" checked><span>Учебник<small>параграфы и правила</small></span></label>
+      <label class="chk"><input type="checkbox" id="tb2" checked><span>Сводка по классу<small>без имён, класс придуманный</small></span></label>
+      <label class="chk"><input type="checkbox" id="tb3" checked><span>Банк задач<small>дроби, три уровня сложности</small></span></label>
+    </details>
+    <div class="navrow"><button class="btn" id="runB">▶ Запустить агента</button><button class="btn soft" id="evalB">Оценить мою инструкцию</button></div>
+    <div id="evalBox"></div>
+    <h3 class="block-title">Журнал агента</h3><div class="log" id="logB"><p class="hint">Здесь появятся шаги агента после запуска.</p></div>
+    <h3 class="block-title">Результат</h3><div class="out" id="outB"><span class="hint">Пока пусто.</span></div>
+    <h3 class="block-title">Ваша проверка</h3>
+    <label class="chk"><input type="checkbox" class="cB"><span>Агент не менял тему и цель</span></label>
+    <label class="chk"><input type="checkbox" class="cB"><span>Факты совпадают с учебником</span></label>
+    <label class="chk"><input type="checkbox" class="cB"><span>Выполнен мой критерий проверки</span></label>
+    <label class="chk"><input type="checkbox" class="cB"><span>После небольших правок я бы это использовал(а)</span></label>
+    <div class="navrow"><button class="btn" id="finB" disabled>Готово, засчитать</button><span class="hint" id="hB">Сначала запустите агента и отметьте пункты проверки.</span></div>`;
+  const F={role:$('#b_role',el),goal:$('#b_goal',el),rules:$('#b_rules',el),format:$('#b_format',el),check:$('#b_check',el)};
+  for(const k in F){ F[k].value=d[k]??DEF[k]; F[k].oninput=()=>{ const o={}; for(const x in F) o[x]=F[x].value; LS('aic-builder',o); }; }
+  const sum=$('details.more summary',el); $$('#tb1,#tb2,#tb3',el).forEach(c=>c.onchange=()=>{ sum.textContent=`Инструменты агента (${$$('#tb1,#tb2,#tb3',el).filter(x=>x.checked).length} из 3)`; });
+  let ran=false; const upd=()=>{ const ok=ran&&$$('.cB',el).every(c=>c.checked); $('#finB',el).disabled=!ok; $('#hB',el).textContent=ok?'':'Сначала запустите агента и отметьте пункты проверки.'; };
+  $$('.cB',el).forEach(c=>c.onchange=upd); $('#finB',el).onclick=()=>pass();
+  const logB=$('#logB',el); let n=0; const add=(k,a,w)=>{ if(!n) logB.innerHTML=''; logB.insertAdjacentHTML('beforeend',stepHTML({k,a,w},n)); n++; };
+  $('#runB',el).onclick=async()=>{
+    const s=await getSample(), btn=$('#runB',el); btn.disabled=true; n=0; logB.innerHTML=''; $('#outB',el).innerHTML='<span class="spin"></span>Агент работает…';
+    add('think','Получил задачу',F.goal.value.slice(0,140));
+    const tools=[];
+    if($('#tb1',el).checked) tools.push({name:'search_textbook',description:'Поиск по школьному учебнику (учебные данные). Возвращает фрагмент параграфа.',inputSchema:{type:'object',properties:{query:{type:'string'}},required:['query']},execute:async({query})=>{ const q=String(query||'').toLowerCase(); const h=TEXTBOOK.filter(e=>e.k.some(k=>q.includes(k))); add('tool','Ищет в учебнике «'+query+'»',h.length?'Нашёл подходящий параграф':'Ничего не нашёл'); return h.length?h.map(x=>x.t).join('\n'):'Ничего не найдено.'; }});
+    if($('#tb2',el).checked) tools.push({name:'class_data',description:'Сводка по придуманному классу: число учеников по уровням и заметки учителя. Без персональных данных.',inputSchema:{type:'object',properties:{}},execute:async()=>{ add('tool','Смотрит сводку по классу','25 учеников, четырём нужна поддержка'); return JSON.stringify(CLASSDATA); }});
+    if($('#tb3',el).checked) tools.push({name:'task_bank',description:'Банк задач по сложению и вычитанию дробей с одинаковыми знаменателями.',inputSchema:{type:'object',properties:{level:{type:'string',enum:['базовый','средний','повышенный']}},required:['level']},execute:async({level})=>{ add('tool','Берёт задачи из банка, уровень «'+level+'»','Получил '+(BANK[level]||[]).length+' задачи'); return (BANK[level]||['Нет задач']).join('\n'); }});
+    if(!s){ demo(); return; }
+    const prompt=`Ты ИИ-агент и помогаешь учителю. Работай строго по его инструкции.
+Роль: ${F.role.value}
+Цель: ${F.goal.value}
+Правила: ${F.rules.value}
+Формат: ${F.format.value}
+Критерий проверки: ${F.check.value}
+
+Как работать: сначала собери материал доступными инструментами и не придумывай фактов, которых в них нет. Затем выполни задачу в нужном формате (таблицы в Markdown). В конце добавь раздел «## Самопроверка» с расчётом, если он нужен. Если чего-то не хватает или задача противоречит правилам, добавь раздел «## Вопросы учителю». Пиши по-русски, просто и по делу, без реальных имён учеников.`;
+    try{ const r=await s(prompt,{tools,modelTier:'default',cache:false,onText:({text})=>{ $('#outB',el).innerHTML=md(text); }}); $('#outB',el).innerHTML=md(r.text||''); add('done','Отдал результат','Проверьте его по своему критерию'); ran=true; upd(); }
+    catch(e){ if(e&&e.code==='not_granted'){ demo(true); return; } $('#outB',el).innerHTML=`<div class="tryagain">Агенту не удалось закончить${e&&e.code==='rate_limited'?': сейчас слишком много запросов, попробуйте через минуту':''}.</div>`; add('warn','Ошибка','Попробуйте ещё раз'); }
+    btn.disabled=false;
+  };
+  function demo(denied){ const st=[['tool','Ищет в учебнике «сложение дробей»','Нашёл §28'],['tool','Смотрит сводку по классу','Четырём ученикам нужна поддержка'],['tool','Берёт задачи из банка','Три уровня сложности']]; let i=0;
+    const t=()=>{ if(i<st.length){ add(...st[i]); i++; setTimeout(t,600); } else { $('#outB',el).innerHTML=`<p class="hint">${denied?'Доступ к ИИ не разрешён, поэтому':'ИИ в этом окне недоступен, поэтому'} показан пример результата.</p>`+md(`## План урока: сложение дробей с одинаковыми знаменателями
+| Этап | Минуты | Что делаем |
+|---|---|---|
+| Повторение | 5 | Вспоминаем числитель и знаменатель |
+| Новая тема | 10 | Правило §28: 2/7 + 3/7 = 5/7 |
+| Практика | 20 | Задания трёх уровней |
+| Итог | 10 | Самопроверка и обсуждение |
+## Задания
+- Базовый: 1/5 + 2/5
+- Средний: 4/9 + 3/9 + 1/9
+- Повышенный: x/11 + 4/11 = 9/11
+## Самопроверка
+5 + 10 + 20 + 10 = 45 минут`); add('done','Отдал результат','Проверьте его по своему критерию'); ran=true; upd(); $('#runB',el).disabled=false; } }; t(); }
+  $('#evalB',el).onclick=async()=>{ const box=$('#evalBox',el), s=await getSample();
+    if(!s){ box.innerHTML='<div class="out">Оценка работает, когда к странице подключён ИИ. А пока проверьте себя: есть ли роль, понятная цель с классом и объёмом, правила, формат и измеримый критерий?</div>'; return; }
+    box.innerHTML='<div class="out"><span class="spin"></span>Методист читает вашу инструкцию…</div>';
+    try{ const r=await s.json(`Ты доброжелательный опытный методист и помогаешь учителям писать инструкции для ИИ-агентов. Оцени инструкцию по 5 критериям: «Роль», «Цель» (что, для кого, какой объём), «Правила» (ограничения и когда спросить учителя), «Формат», «Проверка» (измеримый критерий). Отдельно проверь, нет ли личных данных учеников. Ответь строго JSON: {"scores":[{"criterion":"Роль","score":0,"comment":"одно короткое живое предложение"}],"privacy_ok":true,"tip":"один главный совет в 1–2 предложениях"}. score: 0, 1 или 2. Пиши по-русски, тепло и по делу.\n\nИнструкция:\nРоль: ${F.role.value}\nЦель: ${F.goal.value}\nПравила: ${F.rules.value}\nФормат: ${F.format.value}\nПроверка: ${F.check.value}`,{modelTier:'quick'});
+      const lab=x=>x>=2?'<span class="pill ok">отлично</span>':x===1?'<span class="pill mid">можно лучше</span>':'<span class="pill no">не хватает</span>';
+      box.innerHTML=`<div class="out pop">${(r.scores||[]).map(x=>`<div class="score">${lab(x.score)}<div><b>${esc(x.criterion)}</b><br><span class="hint">${esc(x.comment)}</span></div></div>`).join('')}<div class="score">${r.privacy_ok===false?'<span class="pill no">внимание</span>':'<span class="pill ok">всё хорошо</span>'}<div><b>Личные данные</b><br><span class="hint">${r.privacy_ok===false?'В инструкции есть сведения об учениках, лучше их убрать.':'Личных данных нет.'}</span></div></div>${r.tip?`<p style="margin-top:10px"><b>Совет:</b> ${esc(r.tip)}</p>`:''}</div>`; }
+    catch(e){ box.innerHTML='<div class="tryagain">Не получилось получить оценку. Попробуйте ещё раз.</div>'; } };
+}
+
+// =============== ИТОГОВЫЙ ПРОЕКТ ===============
+function project(el,pass){
+  const d=LS('aic-project')||{};
+  el.innerHTML=`<div class="task-intro">Опишите одну свою рутинную задачу. Пишите как коллеге, своими словами. Личные данные учеников не нужны.</div>
+    <label class="f">Ваш предмет и классы</label><input type="text" id="pj_s" placeholder="Например: русский язык, 5–7 классы">
+    <label class="f">Какая задача отнимает больше всего времени?</label><textarea id="pj_t" rows="4" placeholder="Например: каждую неделю составляю по три варианта проверочной по пройденной теме, чтобы ученики не списывали друг у друга. Уходит около двух часов."></textarea>
+    <label class="f">Что важно не упустить? <small>— необязательно</small></label><textarea id="pj_i" rows="2" placeholder="Например: варианты должны быть одинаковой сложности, а ответы — в отдельной таблице для меня."></textarea>
+    <div class="navrow"><button class="btn" id="genP">✨ Собрать карточку агента</button></div>
+    <div id="cardP"></div>`;
+  const S=$('#pj_s',el), T=$('#pj_t',el), I=$('#pj_i',el); S.value=d.s||''; T.value=d.t||''; I.value=d.i||'';
+  [S,T,I].forEach(x=>x.oninput=()=>LS('aic-project',{s:S.value,t:T.value,i:I.value}));
+  let agent=null;
+  const show=()=>{ $('#cardP',el).innerHTML=`<h3 class="block-title">Ваш агент</h3><div class="pop">${agentCard(agent).replace('reveal','')}</div><div class="navrow"><button class="btn" id="saveP">Сохранить в «Мои агенты»</button><button class="btn plain" id="regP">Собрать заново</button></div>`;
+    $('#saveP',el).onclick=()=>{ if(!myAgents.some(a=>a.id===agent.id)){ myAgents.unshift(agent); LS('aic-agents',myAgents); saveCloud(); } toast('Агент сохранён на главной странице'); $('#saveP',el).disabled=true; pass(); };
+    $('#regP',el).onclick=()=>$('#genP',el).click(); };
+  $('#genP',el).onclick=async()=>{
+    if(T.value.trim().length<20){ T.classList.add('shake'); setTimeout(()=>T.classList.remove('shake'),400); toast('Опишите задачу чуть подробнее'); return; }
+    const s=await getSample(); const box=$('#cardP',el);
+    if(!s){ agent={id:Date.now()+'',name:'Мой помощник',subject:S.value,role:'Помощник учителя: '+(S.value||'ваш предмет'),goal:T.value.trim(),tools:'Учебник, банк заданий',rules:'Не использовать личные данные учеников. Если чего-то не хватает, спросить учителя.',format:I.value.trim()||'Готовый к печати текст и отдельная таблица ответов',check:'Учитель просматривает результат за 5 минут и правит не больше пары мест',first_test:'Попробуйте на теме, которую вы проходили на этой неделе.'}; show(); return; }
+    box.innerHTML='<div class="out"><span class="spin"></span>Методист собирает карточку вашего агента…</div>';
+    try{ const r=await s.json(`Ты опытный методист и помогаешь учителю превратить рутинную задачу в инструкцию для ИИ-агента. Учитель написал:
+Предмет и классы: ${S.value||'не указаны'}
+Задача: ${T.value}
+Что важно: ${I.value||'не указано'}
+
+Составь карточку агента. Ответь строго JSON с полями: {"name":"короткое дружелюбное название агента, 2–4 слова","role":"кем работает агент","goal":"чёткая цель: что, для кого, какой объём","tools":"какие материалы или инструменты понадобятся","rules":"2–3 ограничения, включая запрет на личные данные учеников и когда спросить учителя","format":"формат результата","check":"измеримый критерий, по которому учитель быстро проверит результат","first_test":"одно конкретное предложение: на чём попробовать агента на этой неделе"}. Пиши по-русски, живо и конкретно, без канцелярита.`,{modelTier:'default'});
+      agent={id:Date.now()+'',subject:S.value,...r}; show(); }
+    catch(e){ box.innerHTML='<div class="tryagain">Не получилось связаться с ИИ. Попробуйте ещё раз чуть позже.</div>'; }
+  };
+}
+
+// =============== СТАРТ ===============
+render(); initCloud();
+</script>
+</body>
+</html>
