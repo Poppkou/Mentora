@@ -6,6 +6,8 @@
 <title>Mentora — практикум по ИИ: промпты, декомпозиция, агенты</title>
 <meta name="description" content="Mentora: практикум для тех, кто уже пользуется ИИ. Инжиниринг промптов, декомпозиция задач, артефакты, код, анализ данных, агенты и проверка ответов.">
 <meta name="theme-color" content="#FBFAF7">
+<!-- Адрес облачной функции оплаты (server/yookassa). Пусто — кнопка оплаты неактивна. -->
+<meta name="mentora-payment-api" content="">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='-10 -6 140 112'%3E%3Cpath fill='%237B6FBE' fill-rule='evenodd' d='M0 100V44a30 30 0 0 1 60 0v56zM19 100V46a11 11 0 0 1 22 0v54z'/%3E%3Cpath fill='%2388A68F' fill-rule='evenodd' d='M60 100V44a30 30 0 0 1 60 0v56zM79 100V46a11 11 0 0 1 22 0v54z'/%3E%3Cpath fill='%237B6FBE' d='M60 0c1.6 6.6 4.4 9.4 11 11-6.6 1.6-9.4 4.4-11 11-1.6-6.6-4.4-9.4-11-11 6.6-1.6 9.4-4.4 11-11z'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400..800&family=Comfortaa:wght@600;700&display=swap" rel="stylesheet">
@@ -96,6 +98,11 @@ header.top .wrap{display:flex;align-items:center;gap:14px;height:62px}
 @media (max-width:520px){.mini .cnt{display:none}.hbtn .lbl{display:none}.hbtn .ico{display:inline}.hbtn{min-width:40px;justify-content:center}}
 .qa-badge{display:inline-grid;place-items:center;height:24px;padding:0 8px;border-radius:8px;background:#2B2842;color:#fff;font-weight:800;font-size:12px;letter-spacing:.05em;border:0}
 .promo{margin-top:10px}
+.pay{margin:14px 0 6px}
+.pay-price{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;margin-bottom:4px}
+.pay-price b{font-size:30px;font-weight:800;color:var(--ink)}.pay-price s{color:var(--soft);font-size:18px}
+.pay .btn{margin-top:6px}
+.pay-msg{min-height:22px;margin-top:8px;font-size:15px;font-weight:600}.pay-msg.no{color:var(--bad)}
 .promo-row{display:flex;gap:8px;flex-wrap:wrap}
 .promo-row input{flex:1;min-width:200px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:.04em;text-transform:uppercase}
 .promo-msg{min-height:22px;margin-top:8px;font-size:15px;font-weight:600}
@@ -641,10 +648,12 @@ async function saveCloud(){
 function markDone(id){ if(done.has(id)||!LESSON_IDS.has(id)) return; done.add(id); saveState(); saveCloud(); renderMini(); }
 
 // =============== ДОСТУП И ПРОМОКОДЫ ===============
-// Платные уроки открывает подписка. Онлайн-оплаты пока нет: доступ выдают промокод
-// или кнопка тестовой подписки в режиме тестировщика (?qa=1).
-// Проверка работает в браузере, поэтому это не защита от взлома, а инструмент для тестов.
-const ACCESS_KEY='mentora:v2:access', PROMO_KEY='mentora:v2:promo', QA_KEY='mentora:qa';
+// Полный доступ открывает разовая оплата через ЮKassa (server/yookassa) или временный промокод.
+// Промокод на скидку только запоминается здесь: сумму со скидкой считает и проверяет сервер.
+const ACCESS_KEY='mentora:v2:access', PROMO_KEY='mentora:v2:promo', QA_KEY='mentora:qa', PENDING_KEY='mentora:v2:payment';
+const PRICE_KOP=155000; // 1 550 ₽
+const PAYMENT_API=(document.querySelector('meta[name="mentora-payment-api"]')?.content||'').trim();
+const ACCESS_SOURCES=['payment','promo'];
 
 // SHA-256 без внешних зависимостей: коды хранятся только в виде хешей.
 const SHA_K=new Uint32Array([0x428a2f98,0x71374491,0xb5c0fbcf,0xe9b5dba5,0x3956c25b,0x59f111f1,0x923f82a4,0xab1c5ed5,0xd807aa98,0x12835b01,0x243185be,0x550c7dc3,0x72be5d74,0x80deb1fe,0x9bdc06a7,0xc19bf174,0xe49b69c1,0xefbe4786,0x0fc19dc6,0x240ca1cc,0x2de92c6f,0x4a7484aa,0x5cb0a9dc,0x76f988da,0x983e5152,0xa831c66d,0xb00327c8,0xbf597fc7,0xc6e00bf3,0xd5a79147,0x06ca6351,0x14292967,0x27b70a85,0x2e1b2138,0x4d2c6dfc,0x53380d13,0x650a7354,0x766a0abb,0x81c2c92e,0x92722c85,0xa2bfe8a1,0xa81a664b,0xc24b8b70,0xc76c51a3,0xd192e819,0xd6990624,0xf40e3585,0x106aa070,0x19a4c116,0x1e376c08,0x2748774c,0x34b0bcb5,0x391c0cb3,0x4ed8aa4a,0x5b9cca4f,0x682e6ff3,0x748f82ee,0x78a5636f,0x84c87814,0x8cc70208,0x90befffa,0xa4506ceb,0xbef9a3f7,0xc67178f2]);
@@ -668,11 +677,10 @@ function sha256(text){
   }
   return [...h].map(x=>x.toString(16).padStart(8,'0')).join('');
 }
-// Хеш от 'mentora-promo:' + код. dur — длительность доступа в мс, null — бессрочно.
+// Хеш от 'mentora-promo:' + код. kind: 'discount' — скидка pct %, 'access' — доступ на dur мс.
 const PROMO_CODES={
-  '871c5401f0136c98f80d3d07b4aab69f6464cba8e8f4a2628b0e948233d54be6':{dur:null},
-  'e40e7fc455e48a01d26208f37ba8f6c26790fbe9fdc5eb44a76ecfcf66bae926':{dur:7*864e5},
-  '8b5329b723aa73025f20ef1d2a3d15718b0c369408f2a2b5d7bccf87ef64123b':{dur:60e3},
+  '30fef3a360c9397d391888ea37edc6b4d12aee889bce496eaebaf8ce81657ad7':{kind:'discount',pct:5},
+  'da06e7325f0428db26baae3a6adcf26c9bf2dcaf59f9261946b99e33db4dd043':{kind:'access',dur:3600e3},
 };
 const PROMO_RE=/^[A-Z0-9]+(?:-[A-Z0-9]+)+$/, PROMO_MIN=8, PROMO_MAX=64;
 const MAX_FAILS=5, FAIL_WINDOW=10*60e3;
@@ -682,7 +690,8 @@ let expiredNotice=false;
 function readAccess(){
   const a=LS(ACCESS_KEY);
   if(a===null) return null;
-  const valid=a&&typeof a==='object'&&a.plan==='premium'&&typeof a.source==='string'&&(a.until===null||Number.isFinite(a.until));
+  const valid=a&&typeof a==='object'&&a.plan==='premium'&&ACCESS_SOURCES.includes(a.source)&&(a.until===null||Number.isFinite(a.until))
+    &&!(a.source==='promo'&&a.until===null); // бессрочный доступ даёт только оплата
   if(!valid){ LS(ACCESS_KEY,null); return null; }
   if(a.until!==null&&a.until<=Date.now()){ LS(ACCESS_KEY,null); expiredNotice=true; return null; }
   return a;
@@ -716,8 +725,16 @@ function promoLog(){
   return {
     redeemed:Array.isArray(d&&d.redeemed)?d.redeemed.filter(x=>typeof x==='string'&&/^[0-9a-f]{64}$/.test(x)):[],
     fails:Array.isArray(d&&d.fails)?d.fails.filter(t=>Number.isFinite(t)&&t>now-FAIL_WINDOW&&t<=now+60e3).sort((a,b)=>a-b):[],
+    discount:validDiscount(d&&d.discount),
   };
 }
+function validDiscount(x){
+  if(!x||typeof x!=='object'||typeof x.code!=='string') return null;
+  const def=PROMO_CODES[sha256('mentora-promo:'+x.code)];
+  return def&&def.kind==='discount'?{code:x.code,pct:def.pct}:null;
+}
+const priceKop=()=>{ const d=promoLog().discount; return d?Math.round(PRICE_KOP*(100-d.pct)/100):PRICE_KOP; };
+const fmtRub=kop=>(kop%100?(kop/100).toLocaleString('ru-RU',{minimumFractionDigits:2,maximumFractionDigits:2}):(kop/100).toLocaleString('ru-RU'))+' ₽';
 const lockLeft=log=>log.fails.length>=MAX_FAILS?Math.max(0,log.fails[log.fails.length-MAX_FAILS]+FAIL_WINDOW-Date.now()):0;
 function redeemPromo(raw){
   const log=promoLog(), wait=lockLeft(log);
@@ -731,13 +748,16 @@ function redeemPromo(raw){
     return {ok:false,msg:'Такого промокода нет. Проверьте, нет ли опечатки.'+(left>0?` Осталось попыток: ${left}.`:' Ввод временно заблокирован на 10 минут.')};
   }
   const cur=readAccess();
-  if(cur&&cur.until===null) return {ok:false,msg:'Полный доступ уже открыт бессрочно, промокод не нужен.'};
-  if(def.dur!==null&&log.redeemed.includes(hash)) return {ok:false,msg:'Этот промокод уже активирован на этом устройстве.'};
+  if(cur&&cur.until===null) return {ok:false,msg:'Полный доступ уже оплачен, промокод не нужен.'};
+  if(def.kind==='discount'){
+    if(log.discount&&log.discount.code===code) return {ok:false,msg:`Скидка ${def.pct} % уже применена.`};
+    log.discount={code,pct:def.pct}; log.fails=[]; LS(PROMO_KEY,log);
+    return {ok:true,kind:'discount',msg:`Скидка ${def.pct} % применена: полный доступ стоит ${fmtRub(priceKop())} вместо ${fmtRub(PRICE_KOP)}.`};
+  }
+  if(log.redeemed.includes(hash)) return {ok:false,msg:'Этот промокод уже активирован на этом устройстве.'};
   grantAccess('promo',def.dur);
-  if(!log.redeemed.includes(hash)) log.redeemed.push(hash);
-  log.fails=[]; LS(PROMO_KEY,log);
-  const a=readAccess();
-  return {ok:true,msg:a.until===null?'Промокод принят: полный доступ открыт бессрочно.':`Промокод принят: полный доступ открыт до ${fmtDate(a.until)}.`};
+  log.redeemed.push(hash); log.fails=[]; LS(PROMO_KEY,log);
+  return {ok:true,kind:'access',msg:`Промокод принят: полный доступ открыт до ${fmtDate(readAccess().until)}.`};
 }
 
 // Режим тестировщика: ?qa=1 включает, ?qa=0 выключает. Параметр сразу убирается из адреса.
@@ -791,7 +811,7 @@ setBig(state.big);
 $('#bigBtn').onclick=()=>setBig(!document.body.classList.contains('big'));
 
 // =============== НАВИГАЦИЯ ===============
-const PAGES={help:()=>renderHelp(), glossary:()=>renderGlossary(), access:()=>renderAccess()};
+const PAGES={help:()=>renderHelp(), glossary:()=>renderGlossary(), access:()=>renderAccess(), paid:()=>renderPaid()};
 function route(){
   let h=''; try{ h=decodeURIComponent(location.hash.slice(1)).trim(); }catch(e){ h='#bad'; }
   if(!h) return {page:'home'};
@@ -809,7 +829,7 @@ function renderMini(){ const n=doneCount(), a=readAccess(), ab=$('#accBtn');
   if(qaMode()&&!$('#qaBadge')) $('#mini').insertAdjacentHTML('beforebegin','<button class="qa-badge" id="qaBadge" data-go="access" title="Режим тестировщика">QA</button>'); if(!qaMode()) $('#qaBadge')?.remove(); $('#mini').innerHTML=`<span class="track"><i style="width:${n/TOTAL*100}%"></i></span><span title="Уровень: число пройденных модулей из ${MODULES.length}. Пройдено уроков: ${n} из ${TOTAL}">Ур. ${userLevel()}<span class="cnt"> · ${n}/${TOTAL}</span></span>`; }
 function render(){
   renderMini(); const r=route();
-  if(expiredNotice){ expiredNotice=false; setTimeout(()=>toast('Срок тестового доступа истёк'),300); }
+  if(expiredNotice){ expiredNotice=false; setTimeout(()=>toast('Срок доступа по промокоду истёк'),300); }
   if(r.page==='missing'){ // старая или ошибочная ссылка: тихо возвращаем на главную без записи в историю
     history.replaceState(null,'',location.pathname+location.search); L=null; renderHome(); toast('Такой страницы нет, открыта главная'); return; }
   if(r.page==='lesson'){ const st=lessonStatus(r.l); if(st==='done'||st==='open') renderLesson(r.l); else { L=null; renderLocked(r.l,st); } return; }
@@ -823,11 +843,11 @@ function renderLocked(l,why){
       <div class="lockcard"><div class="lk">🔑</div>
         <h1>Урок ${l.n}. ${l.title}</h1>
         <p class="lead">Этот урок входит в полный доступ. Бесплатно открыты уроки ${freeRange()}.</p>
-        <p>Онлайн-оплата пока не подключена. Если у вас есть промокод, введите его здесь: урок откроется сразу.</p>
+        ${payBlockHTML()}
         ${promoFormHTML()}
         <div class="navrow"><button class="btn soft" data-go="access">Подробнее о доступе</button><button class="btn plain" data-go="home">На главную</button></div>
       </div></div></div>`;
-    bindPromo($('#app'),()=>render()); return;
+    bindPay($('#app')); bindPromo($('#app'),()=>render()); return;
   }
   $('#app').innerHTML=`<div class="view"><div class="wrap page">
     <button class="btn plain" data-go="home">← Все уроки</button>
@@ -850,14 +870,15 @@ function bindPromo(root,onOk){
   f.onsubmit=e=>{ e.preventDefault(); if(busy) return; busy=true;
     const r=redeemPromo(inp.value);
     msg.className='promo-msg '+(r.ok?'ok':'no'); msg.textContent=r.msg;
-    if(r.ok){ inp.value=''; confetti(); toast('Полный доступ открыт'); renderMini(); setTimeout(()=>{ busy=false; onOk&&onOk(); },900); }
+    if(r.ok&&r.kind==='discount'){ inp.value=''; toast('Скидка применена'); setTimeout(()=>{ busy=false; onOk&&onOk(); },1400); }
+    else if(r.ok){ inp.value=''; confetti(); toast('Полный доступ открыт'); renderMini(); setTimeout(()=>{ busy=false; onOk&&onOk(); },900); }
     else { inp.classList.add('shake'); setTimeout(()=>inp.classList.remove('shake'),400); busy=false; }
   };
   inp.oninput=()=>{ msg.textContent=''; msg.className='promo-msg'; };
 }
 function renderAccess(){
   const a=readAccess(), paid=LESSONS.filter(l=>l.premium), free=LESSONS.filter(l=>!l.premium);
-  const status=a?`<span class="pill ok">Полный доступ</span><p>${a.until===null?'Без ограничения по времени':'Действует до '+fmtDate(a.until)}. Источник: ${a.source==='qa'?'тестовая подписка':'промокод'}.</p>`
+  const status=a?`<span class="pill ok">Полный доступ</span><p>${a.until===null?'Оплачен, без ограничения по времени.':'По промокоду, действует до '+fmtDate(a.until)+'.'}</p>`
                  :`<span class="pill mid">Бесплатный доступ</span><p>Открыты уроки ${freeRange()}. Ещё ${paid.length} ${plural(paid.length,'урок','урока','уроков')} входят в полный доступ.</p>`;
   $('#app').innerHTML=`<div class="view"><div class="wrap page">
     <button class="btn plain" data-go="home">← На главную</button>
@@ -867,11 +888,75 @@ function renderAccess(){
       <div class="panel"><h3>Бесплатно</h3><ul>${free.map(l=>`<li>${l.n}. ${l.title}</li>`).join('')}</ul></div>
       <div class="panel"><h3>Полный доступ</h3><ul>${paid.map(l=>`<li>${l.n}. ${l.title}</li>`).join('')}</ul></div>
     </div>
-    ${a&&a.until===null?'':`<div class="panel" style="margin-top:14px"><h3>Есть промокод?</h3><p class="hint">Онлайн-оплата пока не подключена. Промокод открывает полный доступ сразу.</p>${promoFormHTML()}</div>`}
+    ${a&&a.until===null?'':`<div class="panel" style="margin-top:14px">${payBlockHTML()}<h3 style="margin-top:18px">Есть промокод?</h3><p class="hint">Промокод даёт скидку на оплату или временный доступ.</p>${promoFormHTML()}</div>`}
     ${qaMode()?qaPanelHTML():''}
   </div></div>`;
-  bindPromo($('#app'),()=>renderAccess());
+  bindPay($('#app')); bindPromo($('#app'),()=>renderAccess());
   if(qaMode()) bindQa();
+}
+
+// =============== ОПЛАТА ===============
+// 1) create: сервер проверяет промокод, считает сумму и создаёт платёж в ЮKassa, сайт переходит на её страницу.
+// 2) ЮKassa возвращает на #paid; сайт спрашивает у сервера статус платежа и открывает доступ после успешной оплаты.
+const PAY_TIMEOUT=15e3, POLL_EVERY=3e3, POLL_MAX=20;
+const PID_RE=/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+function readPending(){ const x=LS(PENDING_KEY); return x&&typeof x==='object'&&typeof x.pid==='string'&&PID_RE.test(x.pid)?x:null; }
+async function callPay(action,opts){
+  const ctl=new AbortController(), t=setTimeout(()=>ctl.abort(),PAY_TIMEOUT);
+  try{
+    const r=await fetch(PAYMENT_API+(PAYMENT_API.includes('?')?'&':'?')+'action='+action+(opts&&opts.query||''),{method:opts&&opts.body?'POST':'GET',headers:opts&&opts.body?{'Content-Type':'application/json'}:{},body:opts&&opts.body?JSON.stringify(opts.body):undefined,signal:ctl.signal});
+    const data=await r.json().catch(()=>({}));
+    if(!r.ok) throw new Error(data.error||('HTTP '+r.status));
+    return data;
+  } finally{ clearTimeout(t); }
+}
+function payBlockHTML(){
+  const a=readAccess(); if(a&&a.until===null) return '';
+  const d=promoLog().discount, kop=priceKop(), pend=readPending();
+  return `<div class="pay"><div class="pay-price"><b>${fmtRub(kop)}</b>${d?` <s>${fmtRub(PRICE_KOP)}</s> <span class="pill ok">−${d.pct} %</span>`:''}</div>
+    <p class="hint">Разовая оплата, доступ ко всем урокам без срока. Карта, СБП или ЮMoney через ЮKassa.</p>
+    ${PAYMENT_API?`<button class="btn" id="payBtn">Оплатить ${fmtRub(kop)} <span class="arr">→</span></button>`:`<button class="btn" disabled>Оплатить ${fmtRub(kop)}</button><p class="hint">Онлайн-оплата скоро заработает.</p>`}
+    ${pend&&PAYMENT_API?`<button class="btn plain" data-go="paid">Уже оплатили? Проверить оплату</button>`:''}
+    <div class="pay-msg" role="status" aria-live="polite"></div></div>`;
+}
+function bindPay(root){
+  const b=$('#payBtn',root); if(!b) return; const msg=$('.pay-msg',root);
+  b.onclick=async()=>{
+    if(b.disabled) return; b.disabled=true; msg.className='pay-msg'; msg.innerHTML='<span class="spin"></span>Создаём платёж…';
+    try{
+      const d=promoLog().discount;
+      const r=await callPay('create',{body:{promo:d?d.code:''}});
+      const url=String(r.confirmationUrl||'');
+      let host=''; try{ host=new URL(url).hostname; }catch(e){}
+      if(!PID_RE.test(String(r.paymentId||''))||!/(^|\.)(yookassa|yoomoney)\.ru$/.test(host)) throw new Error('bad-response');
+      LS(PENDING_KEY,{pid:r.paymentId,at:Date.now()});
+      location.href=url;
+    }catch(e){ b.disabled=false; msg.className='pay-msg no'; msg.textContent='Не удалось создать платёж. Проверьте интернет и попробуйте ещё раз.'; }
+  };
+}
+let pollRun=0;
+function renderPaid(){
+  const pend=readPending(), run=++pollRun;
+  const show=(icon,title,text,btns)=>{ $('#app').innerHTML=`<div class="view"><div class="wrap page"><div class="lockcard"><div class="lk">${icon}</div><h1>${title}</h1><p class="lead">${text}</p><div class="navrow">${btns||''}</div></div></div></div>`; };
+  if(!PAYMENT_API||!pend){ show('🧾','Оплата не найдена','На этом устройстве нет незавершённой оплаты. Если вы оплатили на другом устройстве или в другом браузере, откройте сайт там.','<button class="btn" data-go="access">К странице доступа</button>'); return; }
+  show('<span class="spin" style="width:32px;height:32px"></span>','Проверяем оплату','Это займёт несколько секунд. Не закрывайте страницу.');
+  let n=0, netErr=0;
+  const tick=async()=>{
+    if(run!==pollRun||route().page!=='paid') return; // пользователь ушёл со страницы
+    n++;
+    try{
+      const r=await callPay('status',{query:'&id='+encodeURIComponent(pend.pid)});
+      if(run!==pollRun) return;
+      if(r.status==='succeeded'&&r.paid===true){
+        grantAccess('payment',null); LS(PENDING_KEY,null); renderMini(); confetti();
+        show('🎉','Оплата прошла','Полный доступ открыт на этом устройстве. Спасибо!',`<button class="btn" data-go="${(nextLesson()||LESSONS[0]).id}">Продолжить обучение <span class="arr">→</span></button>`); return;
+      }
+      if(r.status==='canceled'){ LS(PENDING_KEY,null); show('↩️','Оплата не прошла','Платёж отменён, деньги не списаны. Можно попробовать ещё раз.','<button class="btn" data-go="access">Попробовать снова</button>'); return; }
+    }catch(e){ if(++netErr>=5){ show('📡','Нет связи с сервером','Не удалось проверить оплату. Если деньги списались, доступ не пропадёт: проверьте ещё раз чуть позже.','<button class="btn" data-go="paid">Проверить снова</button>'); return; } }
+    if(n>=POLL_MAX){ show('⏳','Платёж ещё обрабатывается','Обычно это занимает до минуты. Проверьте ещё раз немного позже.','<button class="btn" data-go="paid">Проверить снова</button>'); return; }
+    setTimeout(tick,POLL_EVERY);
+  };
+  tick();
 }
 
 // =============== ПАНЕЛЬ ТЕСТИРОВЩИКА ===============
@@ -880,8 +965,6 @@ function qaPanelHTML(){
   return `<section class="qa-panel"><div class="qa-head"><span class="qa-badge">QA</span><h3>Для тестировщиков</h3></div>
     <p class="hint">Панель видна только в режиме тестировщика. Выключить: кнопка ниже или адрес с <code>?qa=0</code>.</p>
     <div class="qa-btns">
-      <button class="btn" id="qaSub">Активировать тестовую подписку</button>
-      <button class="btn soft" id="qaRevoke">Отключить подписку</button>
       <button class="btn soft" id="qaAll">Отметить все уроки пройденными</button>
       <button class="btn soft" id="qaFails">Сбросить счётчик неверных промокодов</button>
       <button class="btn soft danger" id="qaReset">Сбросить прогресс</button>
@@ -892,8 +975,6 @@ function qaPanelHTML(){
 }
 function bindQa(){
   const after=t=>{ toast(t); renderMini(); renderAccess(); };
-  $('#qaSub').onclick=()=>{ grantAccess('qa',null); after('Тестовая подписка активирована'); };
-  $('#qaRevoke').onclick=()=>{ revokeAccess(); after('Подписка отключена'); };
   $('#qaAll').onclick=()=>{ done=new Set(LESSONS.map(l=>l.id)); saveState(); saveCloud(); after('Все уроки отмечены пройденными'); };
   $('#qaFails').onclick=()=>{ const g=promoLog(); g.fails=[]; LS(PROMO_KEY,g); after('Счётчик попыток сброшен'); };
   let armed=null; const rb=$('#qaReset');
@@ -901,8 +982,8 @@ function bindQa(){
     clearTimeout(armed); armed=null; resetProgress(); after('Прогресс сброшен до нуля'); };
   $('#qaOff').onclick=()=>{ LS(QA_KEY,null); toast('Режим тестировщика выключен'); renderMini(); renderAccess(); };
 }
-// Если тестовый доступ истекает, пока страница открыта, обновляем интерфейс.
-setInterval(()=>{ const had=!!LS(ACCESS_KEY); if(had&&!hasPremium()){ renderMini(); if(route().page!=='lesson') render(); else { expiredNotice=false; toast('Срок тестового доступа истёк'); } } },15e3);
+// Если временный доступ истекает, пока страница открыта, обновляем интерфейс.
+setInterval(()=>{ const had=!!LS(ACCESS_KEY); if(had&&!hasPremium()){ renderMini(); if(route().page!=='lesson') render(); else { expiredNotice=false; toast('Срок доступа по промокоду истёк'); } } },15e3);
 
 // =============== ГЛАВНАЯ ===============
 function greet(){ const h=new Date().getHours(); return h<6?'Доброй ночи':h<12?'Доброе утро':h<18?'Добрый день':'Добрый вечер'; }
@@ -959,7 +1040,8 @@ const FAQ=[
   ['🧭','С чего начать?','С двух вводных уроков: они займут около десяти минут. Дальше курс идёт по модулям. Большая кнопка на главной всегда ведёт к следующему уроку.'],
   ['🔓','Почему уроки открываются по порядку?','Каждый модуль опирается на предыдущий: декомпозиция использует приёмы промптов, а проверка ответов — всё изученное раньше. Пройденные уроки можно открыть в любой момент.'],
   ['📈','Что такое уровень?','Число полностью пройденных модулей. Вы начинаете с уровня 0, максимум — 5.'],
-  ['🔑','Что входит в бесплатный доступ?','Вводный модуль и модуль «Инжиниринг промптов». Остальные модули входят в полный доступ. Онлайн-оплата пока не подключена: полный доступ открывается промокодом на странице «Доступ».'],
+  ['🔑','Сколько стоит полный доступ?','Бесплатно открыты вводный модуль и модуль «Инжиниринг промптов». Полный доступ ко всем урокам стоит 1 550 ₽: оплата разовая, через ЮKassa картой, по СБП или из кошелька ЮMoney. Доступ без срока и открывается сразу после оплаты на том устройстве, с которого вы платили.'],
+  ['🏷️','Как работают промокоды?','Промокод вводится на странице «Доступ». Бывают промокоды на скидку при оплате и на временный доступ ко всем урокам. Каждый промокод можно активировать на устройстве один раз.'],
   ['💾','Нужно ли регистрироваться? Сохранится ли прогресс?','Регистрация не нужна. Прогресс и доступ запоминаются в этом браузере на этом устройстве. Если очистить данные браузера или открыть сайт на другом устройстве, курс начнётся заново.'],
   ['🔠','Мелкий текст. Можно увеличить?','Да. Нажмите кнопку «Аа» в верхней части страницы. Повторное нажатие вернёт обычный размер.'],
   ['🔒','Это безопасно?','Да. Все данные в заданиях придуманы. Не вводите на сайте настоящие персональные данные, пароли и коммерческие сведения.'],
