@@ -86,13 +86,12 @@ header.top .wrap{display:flex;align-items:center;gap:14px;height:62px}
 .lesson .lt b{display:block;font-size:17px;line-height:1.3}
 .lesson .lt span{font-size:14px;color:var(--soft)}
 .lesson .lm{font-size:13px;color:var(--soft);white-space:nowrap}
-.myagents{display:grid;gap:12px}
-.agentcard{background:var(--surface);border-radius:var(--r);padding:20px;box-shadow:var(--shadow);border-left:4px solid var(--sage)}
-.agentcard h3{font-size:18px;margin-bottom:6px}
-.agentcard dl{margin:8px 0 0;display:grid;grid-template-columns:120px 1fr;gap:6px 12px;font-size:15px}
-.agentcard dt{color:var(--soft);font-weight:600}.agentcard dd{margin:0}
-@media (max-width:560px){.agentcard dl{grid-template-columns:1fr}.agentcard dt{margin-top:6px}}
-
+.lesson.locked{background:#F7F6FA;box-shadow:none;border-color:var(--line)}
+.lesson.locked .lt b,.lesson.locked .lt span{color:var(--soft)}
+.lesson.locked .ln{background:var(--line);font-size:16px}
+.lockcard{margin-top:18px;background:var(--surface);border-radius:24px;padding:28px;box-shadow:var(--shadow)}
+.lockcard .lk{font-size:40px;line-height:1;margin-bottom:10px}
+@media (max-width:560px){
 /* урок */
 .lessonpage{padding-top:22px;padding-bottom:80px}
 .lhead{display:flex;align-items:center;gap:10px;margin-bottom:18px}
@@ -500,60 +499,74 @@ const LESSONS = [
   ],
   practice:{type:'privacy'},
   takeaway:'Личные данные детей остаются у вас. Агенту хватает заглушек вроде [Имя ученика].'},
-
-{ id:'l9', title:'Собираем своего агента', short:'Конструктор с живым ИИ', min:25,
-  intro:`<p>Вы уже знаете всё, чтобы собрать агента самостоятельно: цель, правила, инструменты и проверка.</p>
-  <p>Ниже конструктор с настоящим ИИ. Поля уже заполнены примером, но лучше поменяйте их под себя. После запуска загляните в журнал и проверьте результат.</p>`,
-  cards:[
-    {i:'🧱', h:'Из блоков', t:'Роль, цель, правила, формат и проверка. Всё, что было в предыдущих уроках.'},
-    {i:'🔧', h:'С инструментами', t:'Учебник, данные класса и банк задач с придуманными данными для тренировки.'},
-    {i:'👀', h:'Под вашим контролем', t:'В журнале видно каждое действие агента. Результат принимаете вы.'},
-  ],
-  practice:{type:'builder'},
-  takeaway:'Вы собрали агента, посмотрели, как он работает, и проверили результат. Это и есть главный навык.'},
-
-{ id:'l10', title:'Агент для вашего предмета', short:'Итоговый проект', min:20,
-  intro:`<p>Последний шаг — самый полезный. Вспомните задачу, которая отнимает у вас больше всего времени каждую неделю: проверка, подготовка вариантов, отчёты, письма.</p>
-  <p>Опишите её своими словами. ИИ-методист поможет превратить описание в готовую карточку агента, которую можно сразу пробовать.</p>`,
-  cards:[
-    {i:'⏳', h:'Выберите рутину', t:'Задачу, которая повторяется каждую неделю и не требует личных данных детей.'},
-    {i:'📝', h:'Опишите как коллеге', t:'Что вы обычно делаете, что получается в итоге, что важно не упустить.'},
-    {i:'🚀', h:'Попробуйте на неделе', t:'Запустите агента на одной задаче и сравните с тем, как делали раньше.'},
-  ],
-  practice:{type:'project'},
-  takeaway:'Теперь у вас есть собственный агент под реальную задачу. Попробуйте его на этой неделе и поделитесь с коллегами.'},
 ];
 LESSONS.forEach((l,i)=>{ l.n=i+1; l.part=l.part||2; l.c=C[i%C.length]; });
 const TOTAL=LESSONS.length;
 const PARTS=[{n:1,tag:'Часть 1',title:'ИИ с нуля',desc:'Для тех, кто никогда не пользовался ИИ. Начните отсюда.',c:'var(--sageSoft)'},{n:2,tag:'Часть 2',title:'ИИ-агенты',desc:'Помощники, которые выполняют задачу целиком. Проходите после первой части.',c:'var(--accentSoft)'}];
 
 // =============== СОСТОЯНИЕ ===============
-let done=new Set(), myAgents=[], db=null, userId=null;
-const LS=(k,v)=>{ try{ if(v===undefined) return JSON.parse(localStorage.getItem(k)||'null'); localStorage.setItem(k,JSON.stringify(v)); }catch(e){ return null; } };
-done=new Set(LS('aic-done')||[]); myAgents=LS('aic-agents')||[];
+// Весь прогресс лежит в одном ключе с номером версии схемы. Ключи aic-* остались
+// от прежних программ курса: их уроков больше нет, поэтому при запуске они удаляются.
+const STORE_KEY='mentora:v2', SCHEMA=2;
+const LEGACY_KEYS=['aic-done','aic-agents','aic-seen','aic-big','aic-project'];
+function LS(k,v){
+  try{
+    if(v===undefined) return JSON.parse(localStorage.getItem(k)||'null');
+    if(v===null) localStorage.removeItem(k); else localStorage.setItem(k,JSON.stringify(v));
+  }catch(e){ return null; } // приватный режим или повреждённые данные: работаем без сохранения
+}
+const LESSON_IDS=new Set(LESSONS.map(l=>l.id));
+// Прогресс всегда непрерывный: урок засчитан, только если засчитаны все уроки перед ним.
+// Неизвестные id (удалённые уроки, мусор) отбрасываются.
+function cleanDone(list){
+  const got=new Set(Array.isArray(list)?list.filter(x=>typeof x==='string'&&LESSON_IDS.has(x)):[]);
+  const out=[]; for(const l of LESSONS){ if(!got.has(l.id)) break; out.push(l.id); } return out;
+}
+const defaultState=()=>({v:SCHEMA,done:[],seen:false,big:false});
+function loadState(){
+  LEGACY_KEYS.forEach(k=>LS(k,null));
+  const raw=LS(STORE_KEY);
+  if(!raw||typeof raw!=='object'||raw.v!==SCHEMA){ const st=defaultState(); LS(STORE_KEY,st); return st; } // первый вход: уровень 0
+  return {v:SCHEMA,done:cleanDone(raw.done),seen:raw.seen===true,big:raw.big===true};
+}
+let state=loadState();
+let done=new Set(state.done);
+function saveState(){ state.done=cleanDone([...done]); done=new Set(state.done); LS(STORE_KEY,state); }
+saveState();
+function resetProgress(){ state={...defaultState(),big:state.big}; done=new Set(); saveState(); saveCloud(); }
+
+// Облачная копия прогресса работает, только когда сайт открыт внутри Claude.
+let db=null, userId=null;
+const CLOUD_DOC='progress-v2';
 async function initCloud(){
   try{
     if(!window.claude||!window.claude.use) return;
     const [d,u]=await Promise.all([claude.use('db'),claude.use('user')]);
     if(!d||!u) return; const id=await u.id(); if(!id) return;
     db=d; userId=id;
-    const snap=await db.collection('data/users/'+id).doc('progress').get();
+    const snap=await db.collection('data/users/'+id).doc(CLOUD_DOC).get();
     const data=snap&&(typeof snap.data==='function'?snap.data():snap);
-    if(data){ (data.done||[]).forEach(x=>done.add(x)); (data.agents||[]).forEach(a=>{ if(!myAgents.some(m=>m.id===a.id)) myAgents.push(a); }); }
-    LS('aic-done',[...done]); LS('aic-agents',myAgents);
-    saveCloud(); if(!location.hash) render(); else renderMini();
+    const before=done.size;
+    if(data&&data.v===SCHEMA){ const merged=cleanDone([...done,...(Array.isArray(data.done)?data.done:[])]); done=new Set(merged); saveState(); }
+    saveCloud();
+    if(done.size!==before){ if(route().page==='home') render(); else renderMini(); }
   }catch(e){}
 }
 let saving=false, again=false;
 async function saveCloud(){
   if(!db||!userId) return; if(saving){ again=true; return; } saving=true;
-  try{ await db.collection('data/users/'+userId).doc('progress').set({done:[...done],agents:myAgents,updated:new Date().toISOString()}); }catch(e){}
+  try{ await db.collection('data/users/'+userId).doc(CLOUD_DOC).set({v:SCHEMA,done:[...done],updated:new Date().toISOString()}); }catch(e){}
   saving=false; if(again){ again=false; saveCloud(); }
 }
-function markDone(id){ if(done.has(id)) return; done.add(id); LS('aic-done',[...done]); saveCloud(); renderMini(); }
+function markDone(id){ if(done.has(id)||!LESSON_IDS.has(id)) return; done.add(id); saveState(); saveCloud(); renderMini(); }
 
-// =============== ИИ ===============
-let sp=null; const getSample=()=>sp||(sp=(window.claude&&window.claude.use)?claude.use('sample').catch(()=>null):Promise.resolve(null));
+// Доступ к уроку: пройден, открыт или закрыт до прохождения предыдущего.
+const lessonIndex=id=>LESSONS.findIndex(l=>l.id===id);
+function lessonStatus(l){
+  if(done.has(l.id)) return 'done';
+  const i=lessonIndex(l.id);
+  return (i===0||done.has(LESSONS[i-1].id))?'open':'order';
+}
 
 // =============== УТИЛИТЫ ===============
 const $=(s,el=document)=>el.querySelector(s), $$=(s,el=document)=>[...el.querySelectorAll(s)];
@@ -583,29 +596,54 @@ const nextLesson=()=>LESSONS.find(l=>!done.has(l.id));
 const CHECK=`<svg width="40" height="40" viewBox="0 0 40 40"><circle cx="20" cy="20" r="19" fill="#4C8262"/><path class="ck" d="M12 20.5l5.5 5.5L28.5 15" fill="none" stroke="#fff" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
 
 // =============== КРУПНЫЙ ТЕКСТ ===============
-function setBig(on){ document.body.classList.toggle('big',!!on); const b=$('#bigBtn'); if(b) b.setAttribute('aria-pressed',on?'true':'false'); LS('aic-big',on?1:0); }
-setBig(LS('aic-big'));
+function setBig(on){ document.body.classList.toggle('big',!!on); const b=$('#bigBtn'); if(b) b.setAttribute('aria-pressed',on?'true':'false'); state.big=!!on; saveState(); }
+setBig(state.big);
 $('#bigBtn').onclick=()=>setBig(!document.body.classList.contains('big'));
 
 // =============== НАВИГАЦИЯ ===============
-function go(v){ if(v==='home'){ history.pushState(null,'',location.pathname+location.search); render(); } else location.hash=v; window.scrollTo({top:0}); }
+const PAGES={help:()=>renderHelp(), glossary:()=>renderGlossary()};
+function route(){
+  let h=''; try{ h=decodeURIComponent(location.hash.slice(1)).trim(); }catch(e){ h='#bad'; }
+  if(!h) return {page:'home'};
+  const l=LESSONS.find(x=>x.id===h); if(l) return {page:'lesson',l};
+  if(PAGES[h]) return {page:h};
+  return {page:'missing'};
+}
+function go(v){ if(v==='home'){ history.pushState(null,'',location.pathname+location.search); render(); } else if(location.hash.slice(1)===v) render(); else location.hash=v; window.scrollTo({top:0}); }
 addEventListener('hashchange',()=>{ render(); window.scrollTo({top:0}); });
 addEventListener('popstate',()=>render());
 document.addEventListener('click',e=>{ const g=e.target.closest('[data-go]'); if(g){ e.preventDefault(); go(g.dataset.go); } });
-function renderMini(){ const n=LESSONS.filter(l=>done.has(l.id)).length; $('#mini').innerHTML=`<span class="track"><i style="width:${n/TOTAL*100}%"></i></span><span title="Пройдено уроков">${n} из ${TOTAL}</span>`; }
-function render(){ renderMini(); const h=location.hash.slice(1); const l=LESSONS.find(x=>x.id===h); if(l) renderLesson(l); else if(h==='help') renderHelp(); else if(h==='glossary') renderGlossary(); else renderHome(); }
+const doneCount=()=>LESSONS.filter(l=>done.has(l.id)).length;
+function renderMini(){ const n=doneCount(); $('#mini').innerHTML=`<span class="track"><i style="width:${n/TOTAL*100}%"></i></span><span title="Пройдено уроков">${n} из ${TOTAL}</span>`; }
+function render(){
+  renderMini(); const r=route();
+  if(r.page==='missing'){ // старая или ошибочная ссылка: тихо возвращаем на главную без записи в историю
+    history.replaceState(null,'',location.pathname+location.search); L=null; renderHome(); toast('Такой страницы нет, открыта главная'); return; }
+  if(r.page==='lesson'){ const st=lessonStatus(r.l); if(st==='done'||st==='open') renderLesson(r.l); else { L=null; renderLocked(r.l,st); } return; }
+  L=null; if(PAGES[r.page]) PAGES[r.page](); else renderHome();
+}
+function renderLocked(l,why){
+  const nl=nextLesson();
+  $('#app').innerHTML=`<div class="view"><div class="wrap page">
+    <button class="btn plain" data-go="home">← Все уроки</button>
+    <div class="lockcard"><div class="lk">🔒</div>
+      <h1>Урок ${l.n}. ${l.title}</h1>
+      <p class="lead">Уроки открываются по порядку: каждый следующий опирается на предыдущий. Этот урок откроется, когда вы пройдёте урок ${l.n-1}.</p>
+      <div class="navrow">${nl?`<button class="btn" data-go="${nl.id}">Перейти к уроку ${nl.n} <span class="arr">→</span></button>`:''}<button class="btn soft" data-go="home">На главную</button></div>
+    </div></div></div>`;
+}
 
 // =============== ГЛАВНАЯ ===============
 function greet(){ const h=new Date().getHours(); return h<6?'Доброй ночи':h<12?'Доброе утро':h<18?'Добрый день':'Добрый вечер'; }
 function lessonBtn(l,nl){ return `
-    <button class="lesson reveal ${done.has(l.id)?'done':''} ${nl&&nl.id===l.id?'current':''}" data-go="${l.id}" style="--c:${l.c}">
-      <span class="ln">${done.has(l.id)?'✓':l.n}</span>
-      <span class="lt"><b>${l.title}</b><span>${l.short}</span></span>
+    <button class="lesson reveal ${lessonStatus(l)==='order'?'locked':''} ${done.has(l.id)?'done':''} ${nl&&nl.id===l.id?'current':''}" data-go="${l.id}" style="--c:${l.c}">
+      <span class="ln">${done.has(l.id)?'✓':lessonStatus(l)==='order'?'🔒':l.n}</span>
+      <span class="lt"><b>${l.n}. ${l.title}</b><span>${l.short}</span></span>
       <span class="lm">${done.has(l.id)?'пройден':l.min+' мин'}</span>
     </button>`; }
 const ART=`<svg class="art" viewBox="-6 -4 132 108" aria-hidden="true"><path fill="#7B6FBE" fill-rule="evenodd" d="M0 100V44a30 30 0 0 1 60 0v56zM19 100V46a11 11 0 0 1 22 0v54z"/><path fill="#88A68F" fill-rule="evenodd" d="M60 100V44a30 30 0 0 1 60 0v56zM79 100V46a11 11 0 0 1 22 0v54z"/><path fill="#7B6FBE" d="M60 0c1.6 6.6 4.4 9.4 11 11-6.6 1.6-9.4 4.4-11 11-1.6-6.6-4.4-9.4-11-11 6.6-1.6 9.4-4.4 11-11z"/></svg>`;
 function renderHome(){
-  const n=LESSONS.filter(l=>done.has(l.id)).length, nl=nextLesson(), C2=2*Math.PI*36, pct=Math.round(n/TOTAL*100), first=!LS('aic-seen')&&!n;
+  const n=doneCount(), nl=nextLesson(), C2=2*Math.PI*36, pct=Math.round(n/TOTAL*100), first=!state.seen&&!n;
   $('#app').innerHTML=`<div class="view"><div class="wrap">
   <section class="hero">
     <div>
@@ -637,11 +675,10 @@ function renderHome(){
     <button data-go="help" class="reveal" style="--c:var(--accentSoft)"><span class="qi">❔</span><span><b>Как пользоваться сайтом</b><span>Ответы на частые вопросы</span></span></button>
     <button data-go="glossary" class="reveal" style="--c:var(--sageSoft)"><span class="qi">📖</span><span><b>Словарик</b><span>Все новые слова простым языком</span></span></button>
   </div>
-  ${myAgents.length?`<h2 class="sec-title reveal">Мои агенты</h2><div class="myagents">${myAgents.map(agentCard).join('')}</div>`:''}
   </div></div>`;
   observeReveal();
-  const sf=$('#startFirst'); if(sf) sf.onclick=()=>{ LS('aic-seen',1); go(LESSONS[0].id); };
-  const hw=$('#hideWelcome'); if(hw) hw.onclick=()=>{ LS('aic-seen',1); renderHome(); };
+  const sf=$('#startFirst'); if(sf) sf.onclick=()=>{ state.seen=true; saveState(); go(LESSONS[0].id); };
+  const hw=$('#hideWelcome'); if(hw) hw.onclick=()=>{ state.seen=true; saveState(); renderHome(); };
   requestAnimationFrame(()=>setTimeout(()=>{ const f=$('.ring .fg'); if(f) f.style.strokeDashoffset=f.dataset.off; },150));
 }
 
@@ -653,7 +690,6 @@ const FAQ=[
   ['✋','Что, если я отвечу неправильно?','Ничего страшного. Оценок здесь нет. Сайт подскажет, и вы выберете другой вариант. Пробовать можно сколько угодно раз.'],
   ['💾','Нужно ли регистрироваться? Сохранится ли прогресс?','Регистрация не нужна. Пройденные уроки запоминаются в этом браузере на этом устройстве. Если открыть сайт на другом устройстве, прогресс начнётся заново.'],
   ['🔠','Мелкий текст. Можно увеличить?','Да. Нажмите кнопку «Аа» в верхней части страницы. Повторное нажатие вернёт обычный размер.'],
-  ['🤖','В некоторых уроках написано про «живой ИИ». Что это?','В последних уроках можно запустить настоящего ИИ-агента. Если на вашей версии сайта ИИ не подключён, задание покажет готовый пример, и урок всё равно можно пройти.'],
   ['🔒','Это безопасно?','Да. Все данные в заданиях придуманы. Не вводите на сайте настоящие фамилии, телефоны и другие сведения об учениках.'],
 ];
 function renderHelp(){
@@ -688,8 +724,6 @@ function renderGlossary(){
     <div class="navrow"><button class="btn" data-go="home">К урокам <span class="arr">→</span></button></div>
   </div></div>`; observeReveal();
 }
-function agentCard(a){ return `<div class="agentcard reveal"><h3>${esc(a.name)}</h3><p class="hint" style="margin:0">${esc(a.subject||'')}</p><dl>
-  <dt>Роль</dt><dd>${esc(a.role)}</dd><dt>Цель</dt><dd>${esc(a.goal)}</dd><dt>Инструменты</dt><dd>${esc(a.tools)}</dd><dt>Правила</dt><dd>${esc(a.rules)}</dd><dt>Формат</dt><dd>${esc(a.format)}</dd><dt>Проверка</dt><dd>${esc(a.check)}</dd>${a.first_test?`<dt>Первый тест</dt><dd>${esc(a.first_test)}</dd>`:''}</dl></div>`; }
 
 // =============== УРОК ===============
 const STAGES=['Знакомство','Теория','Практика','Итог'];
@@ -710,7 +744,7 @@ function drawStage(){
   if(stage===0){ box.innerHTML=`<div class="stage"><h2>${l.title}</h2><div class="story">${l.intro}</div><div class="navrow"><span class="spacer"></span><button class="btn" id="nx">К теории <span class="arr">→</span></button></div></div>`; $('#nx').onclick=()=>setStage(1); }
   if(stage===1){ box.innerHTML=`<div class="stage"><h2>Коротко о главном</h2><p class="hint" style="margin:-6px 0 14px">Встретилось непонятное слово? Загляните в <button class="wordlink" data-go="glossary">словарик</button>.</p><div class="cards">${l.cards.map(c=>`<div class="tcard reveal" style="--c:${l.c}"><div class="ti">${c.i}</div><div><h3>${c.h}</h3><p>${c.t}</p></div></div>`).join('')}</div><div class="navrow"><button class="btn plain" id="bk">← Назад</button><span class="spacer"></span><button class="btn" id="nx">К практике <span class="arr">→</span></button></div></div>`; observeReveal(); $('#bk').onclick=()=>setStage(0); $('#nx').onclick=()=>setStage(2); }
   if(stage===2){ box.innerHTML=`<div class="stage"><h2>Практика</h2><div class="panel" id="prac"></div><div id="succ"></div><div class="navrow"><button class="btn plain" id="bk">← К теории</button></div></div>`; $('#bk').onclick=()=>setStage(1); PRACTICE[l.practice.type]($('#prac'),l.practice,onPass); if(passed) showSuccess(true); }
-  if(stage===3){ const nl=LESSONS[l.n]; const all=done.size>=TOTAL; box.innerHTML=`<div class="stage"><div class="takeaway"><div class="big">${all?'🎓':'🌱'}</div><h2>${all?'Курс пройден!':'Урок пройден'}</h2><p class="tk">${l.takeaway}</p>${all?'<p class="hint">Вы прошли все уроки. Ваш агент сохранён на главной странице.</p>':''}<div class="navrow" style="justify-content:center">${nl?`<button class="btn" data-go="${nl.id}">Урок ${nl.n}: ${nl.title} <span class="arr">→</span></button>`:''}<button class="btn soft" data-go="home">На главную</button></div></div></div>`; if(all) confetti(); }
+  if(stage===3){ const nl=LESSONS[l.n]; const all=doneCount()>=TOTAL; box.innerHTML=`<div class="stage"><div class="takeaway"><div class="big">${all?'🎓':'🌱'}</div><h2>${all?'Курс пройден!':'Урок пройден'}</h2><p class="tk">${l.takeaway}</p>${all?'<p class="hint">Вы прошли все уроки курса.</p>':''}<div class="navrow" style="justify-content:center">${nl?`<button class="btn" data-go="${nl.id}">Урок ${nl.n}: ${nl.title} <span class="arr">→</span></button>`:''}<button class="btn soft" data-go="home">На главную</button></div></div></div>`; if(all) confetti(); }
 }
 function onPass(){ if(!passed){ passed=true; markDone(L.id); confetti(); } showSuccess(false); drawSteps(); }
 function showSuccess(quiet){ const s=$('#succ'); if(!s) return; s.innerHTML=`<div class="success ${quiet?'':'pop'}">${CHECK}<div class="st">Отлично, задание выполнено!<small>Осталось прочитать короткий итог урока.</small></div><button class="btn" id="toEnd">Итог <span class="arr">→</span></button></div>`; $('#toEnd').onclick=()=>setStage(3); }
@@ -801,132 +835,10 @@ privacy(el,p,pass){
   $('#chkP',el).onclick=()=>{ const v=ta.value, left=PII.filter(x=>x.re.test(v)); const sense=/письм/i.test(v)&&/(алгебр|математ|оценк|успеваем|двойк)/i.test(v);
     if(left.length){ $('#rP',el).innerHTML=`<div class="tryagain">Почти! Ещё осталось: ${left.map(x=>x.l).join(', ')}.</div>`; return; }
     if(!sense){ $('#rP',el).innerHTML='<div class="tryagain">Личных данных больше нет, но потерялся смысл. В запросе должно остаться, что нужно письмо родителю про успеваемость по алгебре.</div>'; return; }
-    $('#rP',el).innerHTML='<div class="expl ok">Отлично: запрос безопасный, и агенту всё понятно. Можете отправить его и посмотреть, какое письмо получится.</div><div class="navrow"><button class="btn soft" id="sendP">Получить письмо от агента</button></div>'; pass();
-    $('#sendP',el).onclick=async()=>{ const s=await getSample(), o=$('#oP',el);
-      if(!s){ o.innerHTML='<div class="out"><p class="hint">Пример письма (ИИ в этом окне недоступен):</p>'+md('Здравствуйте, [Имя родителя]!\n\nХочу обсудить с вами успеваемость [Имя ученика] по алгебре. За последний месяц у него несколько неудовлетворительных оценок. Предлагаю дополнительные занятия по четвергам после уроков — уверена, вместе мы быстро всё наверстаем.\n\nС уважением, [Имя учителя]')+'</div>'; return; }
-      o.innerHTML='<div class="out"><span class="spin"></span>Агент пишет письмо…</div>';
-      try{ const r=await s(`Ты помощник учителя. Напиши тёплое, вежливое и короткое письмо родителю по запросу учителя. Вместо имён используй заглушки в квадратных скобках: [Имя родителя], [Имя ученика], [Имя учителя]. Не добавляй фактов, которых нет в запросе.\n\nЗапрос учителя: ${ta.value}`,{modelTier:'quick',cache:false,onText:({text})=>{ o.innerHTML='<div class="out">'+md(text)+'</div>'; }}); o.innerHTML='<div class="out">'+md(r.text||'')+'</div><p class="hint" style="margin-top:8px">Настоящие имена подставьте сами, уже в готовое письмо.</p>'; }
-      catch(e){ o.innerHTML='<div class="tryagain">Не получилось связаться с ИИ. Попробуйте ещё раз чуть позже.</div>'; } }; };
+    $('#rP',el).innerHTML='<div class="expl ok">Отлично: запрос безопасный, и агенту всё понятно. Вот какое письмо можно получить по такому запросу.</div>'+'<div class="out">'+md('Здравствуйте, [Имя родителя]!\n\nХочу обсудить с вами успеваемость [Имя ученика] по алгебре. За последний месяц у него несколько неудовлетворительных оценок. Предлагаю дополнительные занятия по четвергам после уроков: уверена, вместе мы быстро всё наверстаем.\n\nС уважением, [Имя учителя]')+'</div><p class="hint" style="margin-top:8px">Настоящие имена вы подставите сами, уже в готовый текст.</p>'; pass(); };
 },
-builder(el,p,pass){ builder(el,pass); },
-project(el,p,pass){ project(el,pass); },
 };
 function stepHTML(s,i){ const ic={think:'💭',tool:'🔧',warn:'⚠️',done:'✓'}[s.k]; return `<button class="step ${s.k}" data-step="${i}"><span class="ic">${ic}</span><span><span class="sa">${esc(s.a)}</span><br><span class="sw">${esc(s.w)}</span></span></button>`; }
-
-// =============== КОНСТРУКТОР (живой ИИ) ===============
-const TEXTBOOK=[
-  {k:['дроб','сложени','знаменател'],t:'Математика, 5 класс, §28 «Сложение и вычитание дробей с одинаковыми знаменателями». Правило: числители складывают, знаменатель оставляют тем же. Пример: 2/7 + 3/7 = 5/7. Перед темой повторяют §26 «Обыкновенные дроби».'},
-  {k:['десятичн'],t:'Математика, 5 класс, §32 «Десятичные дроби». Идёт после обыкновенных дробей.'},
-  {k:['фотосинтез','растени'],t:'Биология, 6 класс, §12 «Фотосинтез»: на свету растения образуют органические вещества из углекислого газа и воды и выделяют кислород.'},
-  {k:['тепл','конвекц','излучен'],t:'Физика, 8 класс, §2–6 «Виды теплопередачи»: теплопроводность, конвекция, излучение.'},
-  {k:['вулкан'],t:'Окружающий мир, 3 класс: вулкан — гора, из которой при извержении выходят лава, пепел и газы.'},
-  {k:['пётр','петр','истори'],t:'История России, 8 класс, глава 1 «Россия в эпоху преобразований Петра I».'},
-];
-const CLASSDATA={класс:'5 «В» (придуманный)',учеников:25,уровни:{высокий:6,средний:15,'нужна поддержка':4},заметка:'4 ученика путают числитель и знаменатель. Урок длится 45 минут.'};
-const BANK={'базовый':['1/5 + 2/5','3/8 + 1/8','Закрасьте 2/6 круга, потом ещё 3/6. Какая часть закрашена?'],'средний':['4/9 + 3/9 + 1/9','7/12 − 5/12','Маша прочитала 3/10 книги в понедельник и 4/10 во вторник. Какую часть книги она прочитала?'],'повышенный':['x/11 + 4/11 = 9/11. Найдите x.','Сумма двух дробей со знаменателем 15 равна 13/15. Одна из них 6/15. Найдите другую.','Придумайте задачу с ответом 5/8.']};
-const DEF={role:'Помощник учителя математики',goal:'Подготовь план урока «Сложение дробей с одинаковыми знаменателями» для 5 класса на 45 минут.',rules:'Опирайся только на учебник. Не меняй тему урока. Если чего-то не хватает, задай вопрос учителю, а не придумывай.',format:'Таблица этапов урока с минутами, затем по одному заданию каждого уровня сложности.',check:'Сумма минут по этапам равна 45. Все задания по теме урока.'};
-function builder(el,pass){
-  const d=LS('aic-builder')||{};
-  el.innerHTML=`<div class="task-intro">Поля заполнены примером. Можно сразу нажать «Запустить» или сначала поменять что-нибудь под себя.</div>
-    <label class="f">Роль <small>— кем работает агент</small></label><input type="text" id="b_role">
-    <label class="f">Цель <small>— что получить, для какого класса и в каком объёме</small></label><textarea id="b_goal" rows="2"></textarea>
-    <label class="f">Правила <small>— чего нельзя и когда спросить вас</small></label><textarea id="b_rules" rows="2"></textarea>
-    <label class="f">Формат результата</label><textarea id="b_format" rows="2"></textarea>
-    <label class="f">Как проверить <small>— по какому признаку видно, что результат хороший</small></label><textarea id="b_check" rows="2"></textarea>
-    <details class="more"><summary>Инструменты агента (3 из 3)</summary>
-      <label class="chk"><input type="checkbox" id="tb1" checked><span>Учебник<small>параграфы и правила</small></span></label>
-      <label class="chk"><input type="checkbox" id="tb2" checked><span>Сводка по классу<small>без имён, класс придуманный</small></span></label>
-      <label class="chk"><input type="checkbox" id="tb3" checked><span>Банк задач<small>дроби, три уровня сложности</small></span></label>
-    </details>
-    <div class="navrow"><button class="btn" id="runB">▶ Запустить агента</button><button class="btn soft" id="evalB">Оценить мою инструкцию</button></div>
-    <div id="evalBox"></div>
-    <h3 class="block-title">Журнал агента</h3><div class="log" id="logB"><p class="hint">Здесь появятся шаги агента после запуска.</p></div>
-    <h3 class="block-title">Результат</h3><div class="out" id="outB"><span class="hint">Пока пусто.</span></div>
-    <h3 class="block-title">Ваша проверка</h3>
-    <label class="chk"><input type="checkbox" class="cB"><span>Агент не менял тему и цель</span></label>
-    <label class="chk"><input type="checkbox" class="cB"><span>Факты совпадают с учебником</span></label>
-    <label class="chk"><input type="checkbox" class="cB"><span>Выполнен мой критерий проверки</span></label>
-    <label class="chk"><input type="checkbox" class="cB"><span>После небольших правок я бы это использовал(а)</span></label>
-    <div class="navrow"><button class="btn" id="finB" disabled>Готово, засчитать</button><span class="hint" id="hB">Сначала запустите агента и отметьте пункты проверки.</span></div>`;
-  const F={role:$('#b_role',el),goal:$('#b_goal',el),rules:$('#b_rules',el),format:$('#b_format',el),check:$('#b_check',el)};
-  for(const k in F){ F[k].value=d[k]??DEF[k]; F[k].oninput=()=>{ const o={}; for(const x in F) o[x]=F[x].value; LS('aic-builder',o); }; }
-  const sum=$('details.more summary',el); $$('#tb1,#tb2,#tb3',el).forEach(c=>c.onchange=()=>{ sum.textContent=`Инструменты агента (${$$('#tb1,#tb2,#tb3',el).filter(x=>x.checked).length} из 3)`; });
-  let ran=false; const upd=()=>{ const ok=ran&&$$('.cB',el).every(c=>c.checked); $('#finB',el).disabled=!ok; $('#hB',el).textContent=ok?'':'Сначала запустите агента и отметьте пункты проверки.'; };
-  $$('.cB',el).forEach(c=>c.onchange=upd); $('#finB',el).onclick=()=>pass();
-  const logB=$('#logB',el); let n=0; const add=(k,a,w)=>{ if(!n) logB.innerHTML=''; logB.insertAdjacentHTML('beforeend',stepHTML({k,a,w},n)); n++; };
-  $('#runB',el).onclick=async()=>{
-    const s=await getSample(), btn=$('#runB',el); btn.disabled=true; n=0; logB.innerHTML=''; $('#outB',el).innerHTML='<span class="spin"></span>Агент работает…';
-    add('think','Получил задачу',F.goal.value.slice(0,140));
-    const tools=[];
-    if($('#tb1',el).checked) tools.push({name:'search_textbook',description:'Поиск по школьному учебнику (учебные данные). Возвращает фрагмент параграфа.',inputSchema:{type:'object',properties:{query:{type:'string'}},required:['query']},execute:async({query})=>{ const q=String(query||'').toLowerCase(); const h=TEXTBOOK.filter(e=>e.k.some(k=>q.includes(k))); add('tool','Ищет в учебнике «'+query+'»',h.length?'Нашёл подходящий параграф':'Ничего не нашёл'); return h.length?h.map(x=>x.t).join('\n'):'Ничего не найдено.'; }});
-    if($('#tb2',el).checked) tools.push({name:'class_data',description:'Сводка по придуманному классу: число учеников по уровням и заметки учителя. Без персональных данных.',inputSchema:{type:'object',properties:{}},execute:async()=>{ add('tool','Смотрит сводку по классу','25 учеников, четырём нужна поддержка'); return JSON.stringify(CLASSDATA); }});
-    if($('#tb3',el).checked) tools.push({name:'task_bank',description:'Банк задач по сложению и вычитанию дробей с одинаковыми знаменателями.',inputSchema:{type:'object',properties:{level:{type:'string',enum:['базовый','средний','повышенный']}},required:['level']},execute:async({level})=>{ add('tool','Берёт задачи из банка, уровень «'+level+'»','Получил '+(BANK[level]||[]).length+' задачи'); return (BANK[level]||['Нет задач']).join('\n'); }});
-    if(!s){ demo(); return; }
-    const prompt=`Ты ИИ-агент и помогаешь учителю. Работай строго по его инструкции.
-Роль: ${F.role.value}
-Цель: ${F.goal.value}
-Правила: ${F.rules.value}
-Формат: ${F.format.value}
-Критерий проверки: ${F.check.value}
-
-Как работать: сначала собери материал доступными инструментами и не придумывай фактов, которых в них нет. Затем выполни задачу в нужном формате (таблицы в Markdown). В конце добавь раздел «## Самопроверка» с расчётом, если он нужен. Если чего-то не хватает или задача противоречит правилам, добавь раздел «## Вопросы учителю». Пиши по-русски, просто и по делу, без реальных имён учеников.`;
-    try{ const r=await s(prompt,{tools,modelTier:'default',cache:false,onText:({text})=>{ $('#outB',el).innerHTML=md(text); }}); $('#outB',el).innerHTML=md(r.text||''); add('done','Отдал результат','Проверьте его по своему критерию'); ran=true; upd(); }
-    catch(e){ if(e&&e.code==='not_granted'){ demo(true); return; } $('#outB',el).innerHTML=`<div class="tryagain">Агенту не удалось закончить${e&&e.code==='rate_limited'?': сейчас слишком много запросов, попробуйте через минуту':''}.</div>`; add('warn','Ошибка','Попробуйте ещё раз'); }
-    btn.disabled=false;
-  };
-  function demo(denied){ const st=[['tool','Ищет в учебнике «сложение дробей»','Нашёл §28'],['tool','Смотрит сводку по классу','Четырём ученикам нужна поддержка'],['tool','Берёт задачи из банка','Три уровня сложности']]; let i=0;
-    const t=()=>{ if(i<st.length){ add(...st[i]); i++; setTimeout(t,600); } else { $('#outB',el).innerHTML=`<p class="hint">${denied?'Доступ к ИИ не разрешён, поэтому':'ИИ в этом окне недоступен, поэтому'} показан пример результата.</p>`+md(`## План урока: сложение дробей с одинаковыми знаменателями
-| Этап | Минуты | Что делаем |
-|---|---|---|
-| Повторение | 5 | Вспоминаем числитель и знаменатель |
-| Новая тема | 10 | Правило §28: 2/7 + 3/7 = 5/7 |
-| Практика | 20 | Задания трёх уровней |
-| Итог | 10 | Самопроверка и обсуждение |
-## Задания
-- Базовый: 1/5 + 2/5
-- Средний: 4/9 + 3/9 + 1/9
-- Повышенный: x/11 + 4/11 = 9/11
-## Самопроверка
-5 + 10 + 20 + 10 = 45 минут`); add('done','Отдал результат','Проверьте его по своему критерию'); ran=true; upd(); $('#runB',el).disabled=false; } }; t(); }
-  $('#evalB',el).onclick=async()=>{ const box=$('#evalBox',el), s=await getSample();
-    if(!s){ box.innerHTML='<div class="out">Оценка работает, когда к странице подключён ИИ. А пока проверьте себя: есть ли роль, понятная цель с классом и объёмом, правила, формат и измеримый критерий?</div>'; return; }
-    box.innerHTML='<div class="out"><span class="spin"></span>Методист читает вашу инструкцию…</div>';
-    try{ const r=await s.json(`Ты доброжелательный опытный методист и помогаешь учителям писать инструкции для ИИ-агентов. Оцени инструкцию по 5 критериям: «Роль», «Цель» (что, для кого, какой объём), «Правила» (ограничения и когда спросить учителя), «Формат», «Проверка» (измеримый критерий). Отдельно проверь, нет ли личных данных учеников. Ответь строго JSON: {"scores":[{"criterion":"Роль","score":0,"comment":"одно короткое живое предложение"}],"privacy_ok":true,"tip":"один главный совет в 1–2 предложениях"}. score: 0, 1 или 2. Пиши по-русски, тепло и по делу.\n\nИнструкция:\nРоль: ${F.role.value}\nЦель: ${F.goal.value}\nПравила: ${F.rules.value}\nФормат: ${F.format.value}\nПроверка: ${F.check.value}`,{modelTier:'quick'});
-      const lab=x=>x>=2?'<span class="pill ok">отлично</span>':x===1?'<span class="pill mid">можно лучше</span>':'<span class="pill no">не хватает</span>';
-      box.innerHTML=`<div class="out pop">${(r.scores||[]).map(x=>`<div class="score">${lab(x.score)}<div><b>${esc(x.criterion)}</b><br><span class="hint">${esc(x.comment)}</span></div></div>`).join('')}<div class="score">${r.privacy_ok===false?'<span class="pill no">внимание</span>':'<span class="pill ok">всё хорошо</span>'}<div><b>Личные данные</b><br><span class="hint">${r.privacy_ok===false?'В инструкции есть сведения об учениках, лучше их убрать.':'Личных данных нет.'}</span></div></div>${r.tip?`<p style="margin-top:10px"><b>Совет:</b> ${esc(r.tip)}</p>`:''}</div>`; }
-    catch(e){ box.innerHTML='<div class="tryagain">Не получилось получить оценку. Попробуйте ещё раз.</div>'; } };
-}
-
-// =============== ИТОГОВЫЙ ПРОЕКТ ===============
-function project(el,pass){
-  const d=LS('aic-project')||{};
-  el.innerHTML=`<div class="task-intro">Опишите одну свою рутинную задачу. Пишите как коллеге, своими словами. Личные данные учеников не нужны.</div>
-    <label class="f">Ваш предмет и классы</label><input type="text" id="pj_s" placeholder="Например: русский язык, 5–7 классы">
-    <label class="f">Какая задача отнимает больше всего времени?</label><textarea id="pj_t" rows="4" placeholder="Например: каждую неделю составляю по три варианта проверочной по пройденной теме, чтобы ученики не списывали друг у друга. Уходит около двух часов."></textarea>
-    <label class="f">Что важно не упустить? <small>— необязательно</small></label><textarea id="pj_i" rows="2" placeholder="Например: варианты должны быть одинаковой сложности, а ответы — в отдельной таблице для меня."></textarea>
-    <div class="navrow"><button class="btn" id="genP">✨ Собрать карточку агента</button></div>
-    <div id="cardP"></div>`;
-  const S=$('#pj_s',el), T=$('#pj_t',el), I=$('#pj_i',el); S.value=d.s||''; T.value=d.t||''; I.value=d.i||'';
-  [S,T,I].forEach(x=>x.oninput=()=>LS('aic-project',{s:S.value,t:T.value,i:I.value}));
-  let agent=null;
-  const show=()=>{ $('#cardP',el).innerHTML=`<h3 class="block-title">Ваш агент</h3><div class="pop">${agentCard(agent).replace('reveal','')}</div><div class="navrow"><button class="btn" id="saveP">Сохранить в «Мои агенты»</button><button class="btn plain" id="regP">Собрать заново</button></div>`;
-    $('#saveP',el).onclick=()=>{ if(!myAgents.some(a=>a.id===agent.id)){ myAgents.unshift(agent); LS('aic-agents',myAgents); saveCloud(); } toast('Агент сохранён на главной странице'); $('#saveP',el).disabled=true; pass(); };
-    $('#regP',el).onclick=()=>$('#genP',el).click(); };
-  $('#genP',el).onclick=async()=>{
-    if(T.value.trim().length<20){ T.classList.add('shake'); setTimeout(()=>T.classList.remove('shake'),400); toast('Опишите задачу чуть подробнее'); return; }
-    const s=await getSample(); const box=$('#cardP',el);
-    if(!s){ agent={id:Date.now()+'',name:'Мой помощник',subject:S.value,role:'Помощник учителя: '+(S.value||'ваш предмет'),goal:T.value.trim(),tools:'Учебник, банк заданий',rules:'Не использовать личные данные учеников. Если чего-то не хватает, спросить учителя.',format:I.value.trim()||'Готовый к печати текст и отдельная таблица ответов',check:'Учитель просматривает результат за 5 минут и правит не больше пары мест',first_test:'Попробуйте на теме, которую вы проходили на этой неделе.'}; show(); return; }
-    box.innerHTML='<div class="out"><span class="spin"></span>Методист собирает карточку вашего агента…</div>';
-    try{ const r=await s.json(`Ты опытный методист и помогаешь учителю превратить рутинную задачу в инструкцию для ИИ-агента. Учитель написал:
-Предмет и классы: ${S.value||'не указаны'}
-Задача: ${T.value}
-Что важно: ${I.value||'не указано'}
-
-Составь карточку агента. Ответь строго JSON с полями: {"name":"короткое дружелюбное название агента, 2–4 слова","role":"кем работает агент","goal":"чёткая цель: что, для кого, какой объём","tools":"какие материалы или инструменты понадобятся","rules":"2–3 ограничения, включая запрет на личные данные учеников и когда спросить учителя","format":"формат результата","check":"измеримый критерий, по которому учитель быстро проверит результат","first_test":"одно конкретное предложение: на чём попробовать агента на этой неделе"}. Пиши по-русски, живо и конкретно, без канцелярита.`,{modelTier:'default'});
-      agent={id:Date.now()+'',subject:S.value,...r}; show(); }
-    catch(e){ box.innerHTML='<div class="tryagain">Не получилось связаться с ИИ. Попробуйте ещё раз чуть позже.</div>'; }
-  };
-}
 
 // =============== СТАРТ ===============
 render(); initCloud();
